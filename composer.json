@@ -1,0 +1,28 @@
+{
+  "name": "mobilestock/scribe-tdd",
+  "description": "scribe-tdd is a library that extends ajcastro-scribe-tdd. It includes internal adjustments to ensure compatibility with PHPUnit 11.4 and PEST.",
+  "type": "library",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "MobileStock",
+      "email": "fabio@mobilestock.com.br"
+    }
+  ],
+  "require": {
+    "knuckleswtf/scribe": "^4.38",
+    "pestphp/pest": "^3.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "AjCastro\\ScribeTdd\\": "src/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "AjCastro\\ScribeTdd\\ScribeTddServiceProvider"
+      ]
+    }
+  }
+}
