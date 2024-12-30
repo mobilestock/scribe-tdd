@@ -11,7 +11,7 @@
   ],
   "require": {
     "knuckleswtf/scribe": "^4.38",
-    "pestphp/pest": "^3.7"
+    "pestphp/pest": "^3.0"
   },
   "autoload": {
     "psr-4": {
