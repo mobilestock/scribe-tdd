@@ -12,7 +12,7 @@ class GetFromRoute extends Strategy
         $routePrefix = array_values(array_filter(explode('/', $endpointData->route->action['prefix'])));
 
         $middlewares = $endpointData->route->middleware();
-        $isAuthenticated = in_array(\App\Http\Middleware\Authenticate::class, $middlewares, true);
+        $isAuthenticated = in_array(\App\Http\Middleware\Authenticate::class, $middlewares);
 
         $metadata = [
             'groupName' => $routePrefix[0],
