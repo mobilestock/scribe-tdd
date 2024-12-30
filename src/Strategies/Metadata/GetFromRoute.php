@@ -2,6 +2,7 @@
 
 namespace AjCastro\ScribeTdd\Strategies\Metadata;
 
+use Illuminate\Auth\Middleware\Authenticate;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
 
@@ -12,7 +13,7 @@ class GetFromRoute extends Strategy
         $routePrefix = array_values(array_filter(explode('/', $endpointData->route->action['prefix'])));
 
         $middlewares = $endpointData->route->middleware();
-        $isAuthenticated = in_array(\App\Http\Middleware\Authenticate::class, $middlewares);
+        $isAuthenticated = in_array(Authenticate::class, $middlewares);
 
         $metadata = [
             'groupName' => $routePrefix[0],
