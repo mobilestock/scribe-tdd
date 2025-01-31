@@ -5,29 +5,30 @@ namespace AjCastro\ScribeTdd;
 use AjCastro\ScribeTdd\Commands\DeleteGeneratedFiles;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\ServiceProvider;
+use Knuckles\Scribe\Writing\OpenAPISpecWriter;
 
 class ScribeTddServiceProvider extends ServiceProvider
 {
     public function boot()
     {
-        $this->publishes([
-            __DIR__ . '/../config/scribe-tdd.php' => $this->app->configPath('scribe-tdd.php'),
-        ], 'scribe-tdd-config');
+        App::bind(OpenAPISpecWriter::class, \AjCastro\ScribeTdd\Writing\OpenAPISpecWriter::class);
+
+        $this->publishes(
+            [
+                __DIR__ . '/../config/scribe-tdd.php' => $this->app->configPath('scribe-tdd.php'),
+            ],
+            'scribe-tdd-config'
+        );
 
         $this->mergeConfigFrom(__DIR__ . '/../config/scribe-tdd.php', 'scribe-tdd');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([
-                DeleteGeneratedFiles::class,
-            ]);
+            $this->commands([DeleteGeneratedFiles::class]);
         }
 
-        if (
-            $this->app->environment('testing') &&
-            $this->app->runningInConsole() &&
-            config('scribe-tdd.enabled')
-        ) {
+        if ($this->app->environment('testing') && $this->app->runningInConsole() && config('scribe-tdd.enabled')) {
             $this->registerMiddleware();
         }
     }
