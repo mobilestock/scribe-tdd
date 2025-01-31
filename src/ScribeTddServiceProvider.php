@@ -20,6 +20,12 @@ class ScribeTddServiceProvider extends ServiceProvider
         $scribeMiddlewares = Config::get('scribe.laravel.middleware');
         $scribeMiddlewares[] = DefineYamlContentTypeResponseHeaderOnOpenApiRoutes::class;
         Config::set('scribe.laravel.middleware', $scribeMiddlewares);
+
+        $routesGroup = Config::get('scribe.routes');
+        foreach ($routesGroup as &$routeGroup) {
+            $routeGroup['exclude'][] = 'oauth/*';
+        }
+        Config::set('scribe.routes', $routesGroup);
     }
 
     public function boot()
