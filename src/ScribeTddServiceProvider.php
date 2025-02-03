@@ -29,6 +29,7 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.theme', 'elements');
 
         Config::set('scribe.laravel.add_routes', true);
+        Config::set('scribe.laravel.docs_url', '/docs');
         $scribeMiddlewares = Config::get('scribe.laravel.middleware');
         $scribeMiddlewares[] = SetYamlContentTypeOnOpenApiRoutes::class;
         Config::set('scribe.laravel.middleware', $scribeMiddlewares);
