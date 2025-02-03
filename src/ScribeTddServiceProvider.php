@@ -18,9 +18,48 @@ class ScribeTddServiceProvider extends ServiceProvider
     {
         App::bind(OpenAPISpecWriter::class, OpenAPISpecWriterScribeTdd::class);
 
+        $excludeRoutes = Config::get('scribe.routes.0.exclude');
+        $excludeRoutes[] = '_ignition/*';
+        $excludeRoutes[] = 'oauth/*';
+
+        Config::set('scribe.routes.0.match.prefixes', ['*']);
+        Config::set('scribe.routes.0.match.domains', ['*']);
+        Config::set('scribe.routes.0.exclude', $excludeRoutes);
+        Config::set('scribe.type', 'laravel');
+        Config::set('scribe.theme', 'elements');
+
+        Config::set('scribe.laravel.add_routes', true);
         $scribeMiddlewares = Config::get('scribe.laravel.middleware');
         $scribeMiddlewares[] = SetYamlContentTypeOnOpenApiRoutes::class;
         Config::set('scribe.laravel.middleware', $scribeMiddlewares);
+
+        Config::set('scribe.auth.enabled', true);
+        Config::set('scribe.auth.placeholder', '{YOUR_AUTH_KEY}');
+        Config::set('scribe.auth.in', 'bearer');
+        Config::set('scribe.example_languages', ['php', 'bash', 'javascript']);
+        Config::set('scribe.strategies', [
+            'metadata' => [\AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute::class],
+            'urlParameters' => [\AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
+            'queryParameters' => [
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\AddPaginationParametersFromScribeTdd::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromQueryParamTagFromScribeTdd::class,
+            ],
+            'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
+            'bodyParameters' => [
+                \Knuckles\Scribe\Extracting\Strategies\BodyParameters\GetFromInlineValidator::class,
+                \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromTestResult::class,
+                \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromBodyParamTagFromScribeTdd::class,
+            ],
+            'responses' => [
+                \AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class,
+                \AjCastro\ScribeTdd\Strategies\Responses\UseResponseTagFromScribeTdd::class,
+                \AjCastro\ScribeTdd\Strategies\Responses\UseResponseFileTagFromScribeTdd::class,
+            ],
+            'responseFields' => [
+                \AjCastro\ScribeTdd\Strategies\ResponseFields\GetFromResponseFieldTagFromScribeTdd::class,
+            ],
+        ]);
     }
 
     public function boot()
