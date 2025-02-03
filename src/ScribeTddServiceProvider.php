@@ -3,7 +3,7 @@
 namespace AjCastro\ScribeTdd;
 
 use AjCastro\ScribeTdd\Commands\DeleteGeneratedFiles;
-use AjCastro\ScribeTdd\Http\Middlewares\DefineYamlContentTypeResponseHeaderOnOpenApiRoutes;
+use AjCastro\ScribeTdd\Http\Middlewares\SetYamlContentTypeOnOpenApiRoutes;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\App;
@@ -18,7 +18,7 @@ class ScribeTddServiceProvider extends ServiceProvider
         App::bind(OpenAPISpecWriter::class, \AjCastro\ScribeTdd\Writing\OpenAPISpecWriter::class);
 
         $scribeMiddlewares = Config::get('scribe.laravel.middleware');
-        $scribeMiddlewares[] = DefineYamlContentTypeResponseHeaderOnOpenApiRoutes::class;
+        $scribeMiddlewares[] = SetYamlContentTypeOnOpenApiRoutes::class;
         Config::set('scribe.laravel.middleware', $scribeMiddlewares);
     }
 

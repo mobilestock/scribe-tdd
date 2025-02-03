@@ -2,11 +2,13 @@
 
 namespace AjCastro\ScribeTdd\Http\Middlewares;
 
+use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-class DefineYamlContentTypeResponseHeaderOnOpenApiRoutes
+class SetYamlContentTypeOnOpenApiRoutes
 {
-    public function __invoke(Request $request, $next)
+    public function handle(Request $request, Closure $next): Response
     {
         $response = $next($request);
 
