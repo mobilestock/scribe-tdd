@@ -16,7 +16,7 @@ class GetFromRoute extends Strategy
         $isAuthenticated = in_array(Authenticate::class, $middlewares);
 
         $metadata = [
-            'groupName' => $routePrefix[0],
+            'groupName' => $routePrefix[0] ?? '',
             'groupDescription' => '',
             'subgroup' => $routePrefix[1] ?? '',
             'subgroupDescription' => '',
