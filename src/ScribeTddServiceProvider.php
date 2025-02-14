@@ -25,7 +25,7 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.routes.0.match.prefixes', ['*']);
         Config::set('scribe.routes.0.match.domains', ['*']);
         Config::set('scribe.routes.0.exclude', $excludeRoutes);
-        Config::set('scribe.type', 'laravel');
+        Config::set('scribe.type', 'external_static');
         Config::set('scribe.theme', 'elements');
 
         Config::set('scribe.laravel.add_routes', true);
