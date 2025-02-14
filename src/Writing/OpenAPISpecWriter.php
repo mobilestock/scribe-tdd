@@ -6,9 +6,55 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Knuckles\Camel\Output\OutputEndpointData;
 use Knuckles\Scribe\Writing\OpenAPISpecWriter as WritingOpenAPISpecWriter;
+use Knuckles\Camel\Output\Parameter;
 
 class OpenAPISpecWriter extends WritingOpenAPISpecWriter
 {
+    protected function generateEndpointParametersSpec(OutputEndpointData $endpoint): array
+    {
+        $parameters = [];
+
+        if (count($endpoint->queryParameters)) {
+            /**
+             * @var string $name
+             * @var Parameter $details
+             */
+            foreach ($endpoint->queryParameters as $name => $details) {
+                $parameterData = [
+                    'in' => 'query',
+                    'name' => $name . (str_contains($details['type'], '[]') ? '[]' : ''),
+                    'description' => $details->description,
+                    'example' => $details->example,
+                    'required' => $details->required,
+                    'schema' => $this->generateFieldData($details),
+                ];
+                $parameters[] = $parameterData;
+            }
+        }
+
+        if (count($endpoint->headers)) {
+            foreach ($endpoint->headers as $name => $value) {
+                if (in_array(strtolower($name), ['content-type', 'accept', 'authorization'])) {
+                    // These headers are not allowed in the spec.
+                    // https://swagger.io/docs/specification/describing-parameters/#header-parameters
+                    continue;
+                }
+
+                $parameters[] = [
+                    'in' => 'header',
+                    'name' => $name,
+                    'description' => '',
+                    'example' => $value,
+                    'schema' => [
+                        'type' => 'string',
+                    ],
+                ];
+            }
+        }
+
+        return $parameters;
+    }
+
     protected function generateResponseContentSpec(?string $responseContent, OutputEndpointData $endpoint)
     {
         if (Str::startsWith($responseContent, '<<binary>>')) {
@@ -89,7 +135,13 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
                                     'object' => $this->objectIfEmpty(
                                         collect($decoded[0])
                                             ->mapWithKeys(function ($value, $key) use ($endpoint) {
-                                                return [$key => $this->generateSchemaForValue($value, $endpoint, $key)];
+                                                return [
+                                                    $key => $this->generateSchemaForResponseValue(
+                                                        $value,
+                                                        $endpoint,
+                                                        $key
+                                                    ),
+                                                ];
                                             })
                                             ->toArray()
                                     ),
@@ -104,10 +156,10 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
             case 'object':
                 $properties = collect($decoded)
                     ->mapWithKeys(function ($value, $key) use ($endpoint) {
-                        return [$key => $this->generateSchemaForValue($value, $endpoint, $key)];
+                        return [$key => $this->generateSchemaForResponseValue($value, $endpoint, $key)];
                     })
                     ->toArray();
-                $required = $this->filterRequiredFields($endpoint, array_keys($properties));
+                $required = $this->filterRequiredResponseFields($endpoint, array_keys($properties));
 
                 $data = [
                     'application/json' => [
@@ -136,7 +188,7 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
             $action = last(explode('@', $route->getAction()['uses']));
             return $action;
         }
-        
+
         return parent::operationId($endpoint);
     }
 }
