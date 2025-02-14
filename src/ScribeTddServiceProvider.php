@@ -52,9 +52,7 @@ class ScribeTddServiceProvider extends ServiceProvider
                 \AjCastro\ScribeTdd\Strategies\Responses\UseResponseTagFromScribeTdd::class,
                 \AjCastro\ScribeTdd\Strategies\Responses\UseResponseFileTagFromScribeTdd::class,
             ],
-            'responseFields' => [
-                \AjCastro\ScribeTdd\Strategies\ResponseFields\GetFromResponseFieldTagFromScribeTdd::class,
-            ],
+            'responseFields' => [],
         ]);
     }
 
