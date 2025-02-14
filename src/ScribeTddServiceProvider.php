@@ -42,11 +42,8 @@ class ScribeTddServiceProvider extends ServiceProvider
                 \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
             ],
             'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
-            'bodyParameters' => [
-                \Knuckles\Scribe\Extracting\Strategies\BodyParameters\GetFromInlineValidator::class,
-                \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromTestResult::class,
-                \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromBodyParamTagFromScribeTdd::class,
             ],
+            'bodyParameters' => [\Knuckles\Scribe\Extracting\Strategies\BodyParameters\GetFromInlineValidator::class],
             'responses' => [\AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
         ]);
