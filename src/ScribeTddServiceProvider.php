@@ -40,8 +40,6 @@ class ScribeTddServiceProvider extends ServiceProvider
             'urlParameters' => [\AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
             'queryParameters' => [
                 \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\AddPaginationParametersFromScribeTdd::class,
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromQueryParamTagFromScribeTdd::class,
             ],
             'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
             'bodyParameters' => [
