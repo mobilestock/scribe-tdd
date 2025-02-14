@@ -47,11 +47,7 @@ class ScribeTddServiceProvider extends ServiceProvider
                 \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromTestResult::class,
                 \AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromBodyParamTagFromScribeTdd::class,
             ],
-            'responses' => [
-                \AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class,
-                \AjCastro\ScribeTdd\Strategies\Responses\UseResponseTagFromScribeTdd::class,
-                \AjCastro\ScribeTdd\Strategies\Responses\UseResponseFileTagFromScribeTdd::class,
-            ],
+            'responses' => [\AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
         ]);
     }
