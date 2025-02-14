@@ -39,7 +39,9 @@ class ScribeTddServiceProvider extends ServiceProvider
             'metadata' => [\AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute::class],
             'urlParameters' => [\AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
             'queryParameters' => [
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromInlineValidator::class,
+                // \Knuckles\Scribe\Extracting\Strategies\QueryParameters\GetFromInlineValidator::class, // Possível fazer override para sempre que for GET request, definir como query params; ATT: Tentar.
+                // \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class, // Obtem query params pelo teste auto // remover
             ],
             'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
             'bodyParameters' => [\AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromInlineValidator::class],
