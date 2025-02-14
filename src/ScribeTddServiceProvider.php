@@ -3,7 +3,6 @@
 namespace AjCastro\ScribeTdd;
 
 use AjCastro\ScribeTdd\Commands\DeleteGeneratedFiles;
-use AjCastro\ScribeTdd\Http\Middlewares\SetYamlContentTypeOnOpenApiRoutes;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
 use AjCastro\ScribeTdd\Writing\OpenAPISpecWriter as OpenAPISpecWriterScribeTdd;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
