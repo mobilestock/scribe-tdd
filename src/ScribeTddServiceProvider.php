@@ -31,10 +31,6 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.laravel.add_routes', true);
         Config::set('scribe.laravel.docs_url', '/docs');
 
-        $scribeMiddlewares = Config::get('scribe.laravel.middleware');
-        $scribeMiddlewares[] = SetYamlContentTypeOnOpenApiRoutes::class;
-        Config::set('scribe.laravel.middleware', $scribeMiddlewares);
-
         Config::set('scribe.auth.enabled', true);
         Config::set('scribe.auth.placeholder', '{YOUR_AUTH_KEY}');
         Config::set('scribe.auth.in', 'bearer');
