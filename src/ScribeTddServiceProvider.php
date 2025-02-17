@@ -26,22 +26,12 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.routes.0.exclude', $excludeRoutes);
         Config::set('scribe.type', 'external_static');
         Config::set('scribe.theme', 'elements');
-
-        Config::set('scribe.laravel.add_routes', true);
-        Config::set('scribe.laravel.docs_url', '/docs');
-
         Config::set('scribe.auth.enabled', true);
-        Config::set('scribe.auth.placeholder', '{YOUR_AUTH_KEY}');
-        Config::set('scribe.auth.in', 'bearer');
-        Config::set('scribe.example_languages', ['php', 'bash', 'javascript']);
+
         Config::set('scribe.strategies', [
             'metadata' => [\AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute::class],
             'urlParameters' => [\AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
-            'queryParameters' => [
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromInlineValidator::class,
-                // \Knuckles\Scribe\Extracting\Strategies\QueryParameters\GetFromInlineValidator::class, // Possível fazer override para sempre que for GET request, definir como query params; ATT: Tentar.
-                // \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class, // Obtem query params pelo teste auto // remover
-            ],
+            'queryParameters' => [\AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromInlineValidator::class],
             'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
             'bodyParameters' => [\AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromInlineValidator::class],
             'responses' => [\AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class],
