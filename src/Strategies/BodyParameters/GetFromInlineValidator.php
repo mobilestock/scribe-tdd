@@ -20,7 +20,7 @@ class GetFromInlineValidator extends BaseGetFromInlineValidator
         if (!in_array('GET', $this->endpointData->route->methods())) {
             return true;
         }
-        
+
         return QueryParametersGetFromInlineValidator::shouldUseBodyParameters($this->endpointData);
     }
 }
