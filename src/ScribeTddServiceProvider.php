@@ -27,6 +27,7 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.type', 'external_static');
         Config::set('scribe.theme', 'elements');
         Config::set('scribe.auth.enabled', true);
+        Config::set('scribe.auth.in', 'bearer');
 
         Config::set('scribe.strategies', [
             'metadata' => [\AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute::class],
