@@ -3,6 +3,8 @@
 namespace AjCastro\ScribeTdd\Tests;
 
 use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
+use AjCastro\ScribeTdd\TestResults\RouteTestResult;
+use Closure;
 use Exception;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\File;
@@ -33,6 +35,13 @@ trait ScribeTddSetup
         $this->beforeApplicationDestroyed(function () {
             $this->writeExample();
             if ($this->app->environment('testing')) {
+                Closure::bind(
+                    function () {
+                        self::$cache = [];
+                    },
+                    null,
+                    RouteTestResult::class
+                )();
                 $_SERVER['SCRIBE_TESTS'] = true;
                 ScribeServiceProvider::$customTranslationLayerLoaded = false;
                 Artisan::call('scribe:generate');
