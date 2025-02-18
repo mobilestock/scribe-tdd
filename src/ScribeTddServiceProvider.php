@@ -30,12 +30,12 @@ class ScribeTddServiceProvider extends ServiceProvider
         Config::set('scribe.auth.in', 'bearer');
 
         Config::set('scribe.strategies', [
-            'metadata' => [\AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute::class],
-            'urlParameters' => [\AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
-            'queryParameters' => [\AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromInlineValidator::class],
-            'headers' => [\AjCastro\ScribeTdd\Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
-            'bodyParameters' => [\AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromInlineValidator::class],
-            'responses' => [\AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult::class],
+            'metadata' => [Strategies\Metadata\GetFromRoute::class],
+            'urlParameters' => [Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
+            'queryParameters' => [Strategies\QueryParameters\GetFromInlineValidator::class],
+            'headers' => [Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
+            'bodyParameters' => [Strategies\BodyParameters\GetFromInlineValidator::class],
+            'responses' => [Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
         ]);
     }
