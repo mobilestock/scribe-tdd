@@ -8,6 +8,7 @@ use Closure;
 use Exception;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\App;
 use PHPUnit\Metadata\Annotation\Parser\Registry;
 use Illuminate\Support\Facades\Artisan;
 use Knuckles\Scribe\ScribeServiceProvider;
@@ -16,6 +17,8 @@ use Str;
 
 trait ScribeTddSetup
 {
+    protected static $shutdownRegistered = false;
+
     public function setUpScribeTdd(): void
     {
         if (!config('scribe-tdd.enabled')) {
@@ -34,19 +37,18 @@ trait ScribeTddSetup
 
         $this->beforeApplicationDestroyed(function () {
             $this->writeExample();
-            if ($this->app->environment('testing')) {
-                Closure::bind(
-                    function () {
-                        self::$cache = [];
-                    },
-                    null,
-                    RouteTestResult::class
-                )();
+        });
+
+        if (App::environment('testing') && !self::$shutdownRegistered) {
+            register_shutdown_function(function () {
+                $this->createApplication();
+
                 $_SERVER['SCRIBE_TESTS'] = true;
                 ScribeServiceProvider::$customTranslationLayerLoaded = false;
                 Artisan::call('scribe:generate');
-            }
-        });
+            });
+            self::$shutdownRegistered = true;
+        }
     }
 
     private function makeExample(): void
