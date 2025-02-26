@@ -31,9 +31,16 @@ class ScribeTddServiceProvider extends ServiceProvider
 
         Config::set('scribe.strategies', [
             'metadata' => [Strategies\Metadata\GetFromRoute::class],
-            'urlParameters' => [Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class],
+            'urlParameters' => [
+                \Knuckles\Scribe\Extracting\Strategies\UrlParameters\GetFromLaravelAPI::class,
+                \Knuckles\Scribe\Extracting\Strategies\UrlParameters\GetFromUrlParamAttribute::class,
+                Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class
+            ],
             'queryParameters' => [Strategies\QueryParameters\GetFromInlineValidator::class],
-            'headers' => [Strategies\Headers\GetFromHeaderTagFromScribeTdd::class],
+            'headers' => [
+                Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
+                \Knuckles\Scribe\Extracting\Strategies\Headers\GetFromHeaderAttribute::class
+            ],
             'bodyParameters' => [Strategies\BodyParameters\GetFromInlineValidator::class],
             'responses' => [Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
