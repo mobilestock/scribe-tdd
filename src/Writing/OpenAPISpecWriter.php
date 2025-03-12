@@ -34,7 +34,7 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
 
         if (count($endpoint->headers)) {
             foreach ($endpoint->headers as $name => $value) {
-                if (in_array(strtolower($name), ['content-type', 'accept', 'authorization'])) {
+                if (in_array(mb_strtolower($name), ['content-type', 'accept', 'authorization'])) {
                     // These headers are not allowed in the spec.
                     // https://swagger.io/docs/specification/describing-parameters/#header-parameters
                     continue;
@@ -181,12 +181,13 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
     protected function operationId(OutputEndpointData $endpoint): string
     {
         foreach (Route::getRoutes()->getRoutes() as $route) {
-            if ($route->uri() !== $endpoint->uri) {
+            if ($route->uri() !== $endpoint->uri || empty(array_intersect($endpoint->httpMethods, $route->methods()))) {
                 continue;
             }
 
-            $action = last(explode('@', $route->getAction()['uses']));
-            return $action;
+            $action = explode('@', $route->getAction()['uses']);
+            $formattedAction = last(explode('\\', $action[0])) . Str::ucfirst($action[1]);
+            return $formattedAction;
         }
 
         return parent::operationId($endpoint);
