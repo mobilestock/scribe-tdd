@@ -3,8 +3,10 @@
 namespace AjCastro\ScribeTdd\Strategies\Metadata;
 
 use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Support\Facades\Config;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
+use ReflectionMethod;
 
 class GetFromRoute extends Strategy
 {
@@ -22,12 +24,27 @@ class GetFromRoute extends Strategy
             }
         }
 
+        $isProduction = str_contains(Config::get('app.url'), 'https');
+        if ($isProduction) {
+            $title = last(explode('/', $endpointData->uri));
+        } else {
+            /** @var ReflectionMethod $method */
+            $method = $endpointData->method;
+            $className = $method->class;
+            $methodName = $method->name;
+            $rootDir = env('ROOT_DIR');
+            $fileName = $method->getFileName();
+            $startLine = $method->getStartLine();
+
+            $title = "[$className::$methodName](file://$rootDir/apps$fileName#L$startLine)";
+        }
+
         $metadata = [
             'groupName' => $routePrefix[0] ?? '',
             'groupDescription' => '',
             'subgroup' => $routePrefix[1] ?? '',
             'subgroupDescription' => '',
-            'title' => last(explode('/', $endpointData->uri)) ?: '',
+            'title' => $title,
             'description' => '',
             'authenticated' => $isAuthenticated,
         ];
