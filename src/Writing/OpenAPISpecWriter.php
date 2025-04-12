@@ -187,6 +187,12 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
 
             $action = explode('@', $route->getAction()['uses']);
             $formattedAction = last(explode('\\', $action[0])) . Str::ucfirst($action[1]);
+            if (str_contains($formattedAction, 'Batching')) {
+                $tableName = last(explode('/', $endpoint->uri));
+                $modelName = Str::singular(Str::studly($tableName));
+                $formattedAction .= $modelName;
+            }
+
             return $formattedAction;
         }
 
