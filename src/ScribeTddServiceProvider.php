@@ -34,12 +34,15 @@ class ScribeTddServiceProvider extends ServiceProvider
             'urlParameters' => [
                 \Knuckles\Scribe\Extracting\Strategies\UrlParameters\GetFromLaravelAPI::class,
                 \Knuckles\Scribe\Extracting\Strategies\UrlParameters\GetFromUrlParamAttribute::class,
-                Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class
+                Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class,
             ],
-            'queryParameters' => [Strategies\QueryParameters\GetFromInlineValidator::class],
+            'queryParameters' => [
+                Strategies\QueryParameters\GetFromInlineValidator::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromQueryParamTagFromScribeTdd::class,
+            ],
             'headers' => [
                 Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
-                \Knuckles\Scribe\Extracting\Strategies\Headers\GetFromHeaderAttribute::class
+                \Knuckles\Scribe\Extracting\Strategies\Headers\GetFromHeaderAttribute::class,
             ],
             'bodyParameters' => [Strategies\BodyParameters\GetFromInlineValidator::class],
             'responses' => [Strategies\Responses\GetFromTestResult::class],
