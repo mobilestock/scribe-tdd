@@ -38,7 +38,7 @@ class ScribeTddServiceProvider extends ServiceProvider
             ],
             'queryParameters' => [
                 Strategies\QueryParameters\GetFromInlineValidator::class,
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromQueryParamTagFromScribeTdd::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
             ],
             'headers' => [
                 Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
