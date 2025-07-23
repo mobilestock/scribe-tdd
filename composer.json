@@ -10,7 +10,7 @@
     }
   ],
   "require": {
-    "knuckleswtf/scribe": "4.40",
+    "knuckleswtf/scribe": "^5.2",
     "pestphp/pest": "^3.0"
   },
   "autoload": {
