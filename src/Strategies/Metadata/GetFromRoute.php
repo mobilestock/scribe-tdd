@@ -3,6 +3,7 @@
 namespace AjCastro\ScribeTdd\Strategies\Metadata;
 
 use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Support\Facades\Config;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
@@ -18,7 +19,7 @@ class GetFromRoute extends Strategy
         $isAuthenticated = false;
 
         foreach ($middlewares as $middleware) {
-            if (str_starts_with($middleware, Authenticate::class)) {
+            if (str_starts_with($middleware, Authenticate::class) || str_starts_with($middleware, Authorize::class)) {
                 $isAuthenticated = true;
                 break;
             }
