@@ -3,8 +3,6 @@
 namespace AjCastro\ScribeTdd\Tests;
 
 use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
-use AjCastro\ScribeTdd\TestResults\RouteTestResult;
-use Closure;
 use Exception;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\File;
@@ -39,7 +37,7 @@ trait ScribeTddSetup
             $this->writeExample();
         });
 
-        if (App::environment('testing') && !self::$shutdownRegistered) {
+        if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['IN_PARALLEL'])) {
             register_shutdown_function(function () {
                 $this->createApplication();
 
