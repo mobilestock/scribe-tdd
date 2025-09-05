@@ -7,7 +7,9 @@ use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
 use AjCastro\ScribeTdd\Writing\OpenAPISpecWriter as OpenAPISpecWriterScribeTdd;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\ServiceProvider;
 use Knuckles\Scribe\Writing\OpenAPISpecWriter;
 
@@ -61,13 +63,23 @@ class ScribeTddServiceProvider extends ServiceProvider
 
         $this->mergeConfigFrom(__DIR__ . '/../config/scribe-tdd.php', 'scribe-tdd');
 
-        if ($this->app->runningInConsole()) {
-            $this->commands([DeleteGeneratedFiles::class]);
+        if (!$this->app->runningInConsole()) {
+            return;
         }
 
-        if ($this->app->environment('testing') && $this->app->runningInConsole() && config('scribe-tdd.enabled')) {
-            $this->registerMiddleware();
+        $this->commands([DeleteGeneratedFiles::class]);
+        if (!$this->app->environment('testing') || !config('scribe-tdd.enabled')) {
+            return;
         }
+
+        $this->registerMiddleware();
+        if (empty($_SERVER['IN_PARALLEL'])) {
+            return;
+        }
+
+        ParallelTesting::tearDownProcess(function () {
+            Artisan::call('scribe:generate');
+        });
     }
 
     private function registerMiddleware(): void
