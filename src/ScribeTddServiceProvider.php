@@ -73,7 +73,7 @@ class ScribeTddServiceProvider extends ServiceProvider
         }
 
         $this->registerMiddleware();
-        if (empty($_SERVER['IN_PARALLEL'])) {
+        if (empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
             return;
         }
 

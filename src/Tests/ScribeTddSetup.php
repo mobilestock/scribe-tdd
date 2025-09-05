@@ -37,7 +37,7 @@ trait ScribeTddSetup
             $this->writeExample();
         });
 
-        if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['IN_PARALLEL'])) {
+        if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
             register_shutdown_function(function () {
                 $this->createApplication();
 
