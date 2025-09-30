@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\ServiceProvider;
+use Knuckles\Scribe\ScribeServiceProvider;
 use Knuckles\Scribe\Writing\OpenAPISpecWriter;
 
 class ScribeTddServiceProvider extends ServiceProvider
@@ -78,6 +79,8 @@ class ScribeTddServiceProvider extends ServiceProvider
         }
 
         ParallelTesting::tearDownProcess(function () {
+            $_SERVER['SCRIBE_TESTS'] = true;
+            ScribeServiceProvider::$customTranslationLayerLoaded = false;
             Artisan::call('scribe:generate');
         });
     }
