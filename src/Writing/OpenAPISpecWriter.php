@@ -55,6 +55,17 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
         return $parameters;
     }
 
+    public function generateSchemaForResponseValue(mixed $value, OutputEndpointData $endpoint, string $path): array
+    {
+        $response = parent::generateSchemaForResponseValue($value, $endpoint, $path);
+
+        if ($response['type'] === 'integer') {
+            $response['format'] = $value > 2 ** 32 ? 'int64' : null;
+        }
+
+        return $response;
+    }
+
     protected function generateResponseContentSpec(?string $responseContent, OutputEndpointData $endpoint)
     {
         if (Str::startsWith($responseContent, '<<binary>>')) {
