@@ -59,8 +59,8 @@ class OpenAPISpecWriter extends WritingOpenAPISpecWriter
     {
         $response = parent::generateSchemaForResponseValue($value, $endpoint, $path);
 
-        if ($response['type'] === 'integer') {
-            $response['format'] = $value > 2 ** 32 ? 'int64' : null;
+        if ($response['type'] === 'integer' && $value > 2 ** 32) {
+            $response['format'] = 'int64';
         }
 
         return $response;
