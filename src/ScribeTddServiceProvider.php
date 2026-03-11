@@ -40,6 +40,7 @@ class ScribeTddServiceProvider extends ServiceProvider
                 Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd::class,
             ],
             'queryParameters' => [
+                Strategies\QueryParameters\GetFromLaravelData::class,
                 Strategies\QueryParameters\GetFromInlineValidator::class,
                 \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
             ],
@@ -47,7 +48,10 @@ class ScribeTddServiceProvider extends ServiceProvider
                 Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
                 \Knuckles\Scribe\Extracting\Strategies\Headers\GetFromHeaderAttribute::class,
             ],
-            'bodyParameters' => [Strategies\BodyParameters\GetFromInlineValidator::class],
+            'bodyParameters' => [
+                Strategies\BodyParameters\GetFromLaravelData::class,
+                Strategies\BodyParameters\GetFromInlineValidator::class,
+            ],
             'responses' => [Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
         ]);
