@@ -5,7 +5,7 @@ namespace AjCastro\ScribeTdd\Strategies;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\ParsesValidationRules;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
-use Knuckles\Scribe\Tools\ConsoleOutputUtils as c;
+use Knuckles\Scribe\Tools\ConsoleOutputUtils;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunctionAbstract;
@@ -72,7 +72,7 @@ class GetFromLaravelDataBase extends Strategy
             return $className::{$this->customParameterDataMethodName}();
         }
 
-        c::debug(
+        ConsoleOutputUtils::debug(
             "No {$this->customParameterDataMethodName}() method found in {$className}. Scribe will only be able to extract basic information from the validation rules."
         );
 
