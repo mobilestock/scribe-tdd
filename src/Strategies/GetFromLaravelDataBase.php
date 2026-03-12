@@ -2,6 +2,7 @@
 
 namespace AjCastro\ScribeTdd\Strategies;
 
+use Illuminate\Support\Str;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\ParsesValidationRules;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
@@ -9,6 +10,7 @@ use Knuckles\Scribe\Tools\ConsoleOutputUtils;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionFunctionAbstract;
+use ReflectionNamedType;
 use ReflectionUnionType;
 use Spatie\LaravelData\Data;
 
@@ -60,10 +62,79 @@ class GetFromLaravelDataBase extends Strategy
     protected function getRouteValidationRules(string $className): array
     {
         if (method_exists($className, 'getValidationRules')) {
-            return $className::getValidationRules([]);
+            $payload = $this->buildPayloadForNestedDataExpansion($className);
+
+            return $className::getValidationRules($payload);
         }
 
         return [];
+    }
+
+    protected function buildPayloadForNestedDataExpansion(string $className): array
+    {
+        $payload = [];
+
+        try {
+            $reflection = new ReflectionClass($className);
+        } catch (ReflectionException) {
+            return $payload;
+        }
+
+        $constructor = $reflection->getConstructor();
+        if (!$constructor) {
+            return $payload;
+        }
+
+        foreach ($constructor->getParameters() as $param) {
+            $type = $param->getType();
+            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+                continue;
+            }
+
+            $typeName = $type->getName();
+            if (!class_exists($typeName)) {
+                continue;
+            }
+
+            try {
+                $typeReflection = new ReflectionClass($typeName);
+            } catch (ReflectionException) {
+                continue;
+            }
+
+            if ($typeReflection->isSubclassOf(Data::class)) {
+                $payload[$param->getName()] = $this->buildNestedDataStub($typeReflection);
+            }
+        }
+
+        return $payload;
+    }
+
+    protected function buildNestedDataStub(ReflectionClass $dataClass): array
+    {
+        $stub = [];
+
+        $constructor = $dataClass->getConstructor();
+        if (!$constructor) {
+            return $stub;
+        }
+
+        foreach ($constructor->getParameters() as $param) {
+            $type = $param->getType();
+
+            if ($type instanceof ReflectionNamedType && !$type->isBuiltin() && class_exists($type->getName())) {
+                $typeReflection = new ReflectionClass($type->getName());
+
+                if ($typeReflection->isSubclassOf(Data::class)) {
+                    $stub[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection);
+                    continue;
+                }
+            }
+
+            $stub[Str::snake($param->getName())] = null;
+        }
+
+        return $stub;
     }
 
     protected function getCustomParameterData(string $className): array
