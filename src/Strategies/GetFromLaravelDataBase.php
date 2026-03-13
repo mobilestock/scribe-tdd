@@ -14,6 +14,7 @@ use ReflectionNamedType;
 use ReflectionUnionType;
 use Spatie\LaravelData\Data;
 
+// @issue: https://github.com/mobilestock/backend/issues/1940
 class GetFromLaravelDataBase extends Strategy
 {
     use ParsesValidationRules;
