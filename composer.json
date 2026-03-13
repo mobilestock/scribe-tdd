@@ -11,6 +11,7 @@
   ],
   "require": {
     "knuckleswtf/scribe": "4.40",
+    "spatie/laravel-data": "^4.20",
     "pestphp/pest": "^3.0"
   },
   "autoload": {
