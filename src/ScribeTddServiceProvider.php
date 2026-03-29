@@ -51,6 +51,7 @@ class ScribeTddServiceProvider extends ServiceProvider
             'bodyParameters' => [
                 Strategies\BodyParameters\GetFromLaravelData::class,
                 Strategies\BodyParameters\GetFromInlineValidator::class,
+                Strategies\BodyParameters\GetFromTestResult::class,
             ],
             'responses' => [Strategies\Responses\GetFromTestResult::class],
             'responseFields' => [],
