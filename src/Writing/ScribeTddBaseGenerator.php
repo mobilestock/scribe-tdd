@@ -6,9 +6,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Knuckles\Camel\Output\OutputEndpointData;
 use Knuckles\Camel\Output\Parameter;
-use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator as ScribeBaseGenerator;
+use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator;
 
-class BaseGenerator extends ScribeBaseGenerator
+class ScribeTddBaseGenerator extends BaseGenerator
 {
     protected function generateResponseContentSpec(?string $responseContent, OutputEndpointData $endpoint)
     {
