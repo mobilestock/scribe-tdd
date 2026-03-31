@@ -4,7 +4,7 @@ namespace AjCastro\ScribeTdd;
 
 use AjCastro\ScribeTdd\Commands\DeleteGeneratedFiles;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
-use AjCastro\ScribeTdd\Writing\BaseGenerator as ScribeTddBaseGenerator;
+use AjCastro\ScribeTdd\Writing\ScribeTddBaseGenerator;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
@@ -42,7 +42,7 @@ class ScribeTddServiceProvider extends ServiceProvider
             'queryParameters' => [
                 Strategies\QueryParameters\GetFromLaravelData::class,
                 Strategies\QueryParameters\GetFromInlineValidator::class,
-                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
+                Strategies\QueryParameters\GetFromTestResult::class,
             ],
             'headers' => [
                 Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
