@@ -60,7 +60,11 @@ class ScribeTddBaseGenerator extends BaseGenerator
             }
 
             $action = explode('@', $uses);
-            $formattedAction = last(explode('\\', $action[0])) . Str::ucfirst($action[1]);
+            $controllerName = last(explode('\\', $action[0]));
+            $controllerName = Str::endsWith($controllerName, 'Controller')
+                ? Str::beforeLast($controllerName, 'Controller')
+                : $controllerName;
+            $formattedAction = $controllerName . Str::ucfirst($action[1]);
             if (Str::contains($formattedAction, 'Batching')) {
                 $tableName = last(explode('/', $endpoint->uri));
                 $modelName = Str::studly($tableName);

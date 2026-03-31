@@ -39,8 +39,15 @@ class GetFromRoute extends Strategy
             $title = "[$className::$methodName](file://$rootDir/apps$fileName#L$startLine)";
         }
 
+        $groupName = $routePrefix[0] ?? '';
+
+        if ($groupName === '') {
+            $uriSegments = array_values(array_filter(explode('/', $endpointData->uri)));
+            $groupName = $uriSegments[0] ?? 'general';
+        }
+
         $metadata = [
-            'groupName' => $routePrefix[0] ?? '',
+            'groupName' => $groupName,
             'groupDescription' => '',
             'subgroup' => $routePrefix[1] ?? '',
             'subgroupDescription' => '',
