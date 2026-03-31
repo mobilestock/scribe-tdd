@@ -4,7 +4,7 @@ namespace AjCastro\ScribeTdd;
 
 use AjCastro\ScribeTdd\Commands\DeleteGeneratedFiles;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
-use AjCastro\ScribeTdd\Writing\OpenAPISpecWriter as OpenAPISpecWriterScribeTdd;
+use AjCastro\ScribeTdd\Writing\BaseGenerator as ScribeTddBaseGenerator;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Artisan;
@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\ServiceProvider;
 use Knuckles\Scribe\ScribeServiceProvider;
-use Knuckles\Scribe\Writing\OpenAPISpecWriter;
+use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator;
 
 class ScribeTddServiceProvider extends ServiceProvider
 {
     public function register()
     {
-        App::bind(OpenAPISpecWriter::class, OpenAPISpecWriterScribeTdd::class);
+        App::bind(BaseGenerator::class, ScribeTddBaseGenerator::class);
 
         $excludeRoutes = Config::get('scribe.routes.0.exclude');
         $excludeRoutes[] = '_ignition/*';

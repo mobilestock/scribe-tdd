@@ -13,7 +13,7 @@ class GetFromRoute extends Strategy
 {
     public function __invoke(ExtractedEndpointData $endpointData, array $routeRules = []): array
     {
-        $routePrefix = array_values(array_filter(explode('/', $endpointData->route->action['prefix'])));
+        $routePrefix = array_values(array_filter(explode('/', $endpointData->route->action['prefix'] ?? '')));
 
         $middlewares = $endpointData->route->middleware();
         $isAuthenticated = false;
@@ -26,10 +26,9 @@ class GetFromRoute extends Strategy
         }
 
         $isProduction = str_contains(Config::get('app.url'), 'https');
-        if ($isProduction) {
+        if ($isProduction || !($endpointData->method instanceof ReflectionMethod)) {
             $title = last(explode('/', $endpointData->uri));
         } else {
-            /** @var ReflectionMethod $method */
             $method = $endpointData->method;
             $className = $method->class;
             $methodName = $method->name;
