@@ -96,7 +96,8 @@ class GetFromLaravelDataBase extends Strategy
             if ($type->isBuiltin()) {
                 $collectionOf = $this->getDataCollectionOfClass($param);
                 if ($collectionOf) {
-                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf)];
+                    $visited = [$className => true, $collectionOf->getName() => true];
+                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, $visited)];
                 }
                 continue;
             }
@@ -113,14 +114,15 @@ class GetFromLaravelDataBase extends Strategy
             }
 
             if ($typeReflection->isSubclassOf(Data::class)) {
-                $payload[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection);
+                $visited = [$className => true, $typeName => true];
+                $payload[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, $visited);
             }
         }
 
         return $payload;
     }
 
-    protected function buildNestedDataStub(ReflectionClass $dataClass): array
+    protected function buildNestedDataStub(ReflectionClass $dataClass, array $visited = []): array
     {
         $stub = [];
 
@@ -135,15 +137,15 @@ class GetFromLaravelDataBase extends Strategy
             if ($type instanceof ReflectionNamedType && !$type->isBuiltin() && class_exists($type->getName())) {
                 $typeReflection = new ReflectionClass($type->getName());
 
-                if ($typeReflection->isSubclassOf(Data::class)) {
-                    $stub[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection);
+                if ($typeReflection->isSubclassOf(Data::class) && !isset($visited[$type->getName()])) {
+                    $stub[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, [...$visited, $type->getName() => true]);
                     continue;
                 }
             }
 
             $collectionOf = $this->getDataCollectionOfClass($param);
-            if ($collectionOf) {
-                $stub[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf)];
+            if ($collectionOf && !isset($visited[$collectionOf->getName()])) {
+                $stub[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, [...$visited, $collectionOf->getName() => true])];
                 continue;
             }
 
