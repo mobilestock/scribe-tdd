@@ -65,17 +65,19 @@ trait ScribeTddSetup
 
     private function writeExample()
     {
-        $instances = ExampleCreator::getInstances();
-        foreach ($instances as $instance) {
-            $writeDir = $instance->writeDir($instance->route);
-            File::makeDirectory($writeDir, 0755, true, true);
+        $instancesByRoute = ExampleCreator::getInstances();
+        foreach ($instancesByRoute as $instances) {
+            foreach ($instances as $instance) {
+                $writeDir = $instance->writeDir($instance->route);
+                File::makeDirectory($writeDir, 0755, true, true);
 
-            foreach ($instance->getWritables() as $filename => $writeData) {
-                File::put($writeDir . '/' . $filename, json_encode($writeData, JSON_PRETTY_PRINT));
+                foreach ($instance->getWritables() as $filename => $writeData) {
+                    File::put($writeDir . '/' . $filename, json_encode($writeData, JSON_PRETTY_PRINT));
+                }
             }
-
-            ExampleCreator::flushInstances();
         }
+
+        ExampleCreator::flushInstances();
     }
 
     private function shouldSkipExample(): bool

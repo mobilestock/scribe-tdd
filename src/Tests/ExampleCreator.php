@@ -73,18 +73,30 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public static function getInstanceForRoute($route)
     {
-        if ($instance = static::$instances[static::normalizeUriForInstanceKey($route)] ?? null) {
-            return $instance;
+        $routeKey = static::normalizeUriForInstanceKey($route);
+        $currentInstance = static::getCurrentInstance();
+        $instanceId = $currentInstance->id;
+
+        // Check if this specific test already has an instance for this route
+        if (isset(static::$instances[$routeKey])) {
+            foreach (static::$instances[$routeKey] as $existing) {
+                if ($existing->id === $instanceId) {
+                    return $existing;
+                }
+            }
         }
 
-        $instance = static::getCurrentInstance()->setRoute($route);
+        $instance = $currentInstance->setRoute($route);
 
         return static::registerInstance($instance);
     }
 
     protected static function registerInstance(self $instance)
     {
-        return static::$instances[$instance->instanceKey()] = $instance;
+        $routeKey = $instance->instanceKey();
+        static::$instances[$routeKey][] = $instance;
+
+        return $instance;
     }
 
     public static function getInstances()
@@ -201,18 +213,20 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public function getWritables()
     {
+        $suffix = $this->testMethod;
+
         return [
-            "00-extra-@{$this->testMethod}.json" => $this->getExtra(),
-            "01-url_params-@{$this->testMethod}.json" => [
+            "00-extra-@{$suffix}.json" => $this->getExtra(),
+            "01-url_params-@{$suffix}.json" => [
                 'url_params' => $this->mergeUrlParams(),
             ],
-            "02-query_params-@{$this->testMethod}.json" => [
+            "02-query_params-@{$suffix}.json" => [
                 'query_params' => $this->mergeQueryParams(),
             ],
-            "03-body_params-@{$this->testMethod}.json" => [
+            "03-body_params-@{$suffix}.json" => [
                 'body_params' => $this->mergeBodyParams(),
             ],
-            "04-responses-@{$this->testMethod}.json" => [
+            "04-responses-@{$suffix}.json" => [
                 'responses' => $this->mergeResponses(),
             ],
         ];
