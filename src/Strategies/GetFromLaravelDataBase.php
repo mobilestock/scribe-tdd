@@ -12,6 +12,7 @@ use ReflectionException;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use ReflectionUnionType;
+use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
 
 // @issue: https://github.com/mobilestock/backend/issues/1940
@@ -88,7 +89,15 @@ class GetFromLaravelDataBase extends Strategy
 
         foreach ($constructor->getParameters() as $param) {
             $type = $param->getType();
-            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
+            if (!$type instanceof ReflectionNamedType) {
+                continue;
+            }
+
+            if ($type->isBuiltin()) {
+                $collectionOf = $this->getDataCollectionOfClass($param);
+                if ($collectionOf) {
+                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf)];
+                }
                 continue;
             }
 
@@ -104,7 +113,7 @@ class GetFromLaravelDataBase extends Strategy
             }
 
             if ($typeReflection->isSubclassOf(Data::class)) {
-                $payload[$param->getName()] = $this->buildNestedDataStub($typeReflection);
+                $payload[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection);
             }
         }
 
@@ -132,10 +141,48 @@ class GetFromLaravelDataBase extends Strategy
                 }
             }
 
+            $collectionOf = $this->getDataCollectionOfClass($param);
+            if ($collectionOf) {
+                $stub[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf)];
+                continue;
+            }
+
             $stub[Str::snake($param->getName())] = null;
         }
 
         return $stub;
+    }
+
+    protected function getDataCollectionOfClass(\ReflectionParameter $param): ?ReflectionClass
+    {
+        $declaringFunction = $param->getDeclaringFunction();
+        if (!$declaringFunction instanceof \ReflectionMethod) {
+            return null;
+        }
+
+        $declaringClass = $declaringFunction->getDeclaringClass();
+        if (!$declaringClass->hasProperty($param->getName())) {
+            return null;
+        }
+
+        $property = $declaringClass->getProperty($param->getName());
+        $attributes = $property->getAttributes(DataCollectionOf::class);
+        if (empty($attributes)) {
+            return null;
+        }
+
+        $className = $attributes[0]->newInstance()->class;
+        if (!class_exists($className)) {
+            return null;
+        }
+
+        try {
+            $reflection = new ReflectionClass($className);
+        } catch (ReflectionException) {
+            return null;
+        }
+
+        return $reflection->isSubclassOf(Data::class) ? $reflection : null;
     }
 
     protected function getCustomParameterData(string $className): array
@@ -202,6 +249,8 @@ class GetFromLaravelDataBase extends Strategy
         $normalized = [];
 
         foreach ($rules as $field => $fieldRules) {
+            $field = preg_replace('/\.(\d+)(\.|\z)/', '.*$2', $field);
+
             if (is_string($fieldRules)) {
                 $normalized[$field] = $fieldRules;
                 continue;

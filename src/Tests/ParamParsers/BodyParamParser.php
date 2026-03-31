@@ -18,8 +18,10 @@ class BodyParamParser
                         'example' => $value,
                     ];
                 } elseif (is_array($value) && !Arr::isAssoc($value)) {
+                    $firstItem = head($value);
+                    $itemType = is_array($firstItem) && Arr::isAssoc($firstItem) ? 'object' : gettype($firstItem);
                     $result[$prefix . $key] = [
-                        'type' => gettype(head($value)) . '[]',
+                        'type' => $itemType . '[]',
                         'description' => '',
                         'example' => $value,
                     ];
