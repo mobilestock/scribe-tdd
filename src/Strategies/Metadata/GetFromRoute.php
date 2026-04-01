@@ -26,9 +26,9 @@ class GetFromRoute extends Strategy
         }
 
         $isProduction = str_contains(Config::get('app.url'), 'https');
-        if ($isProduction || !($endpointData->method instanceof ReflectionMethod)) {
+        if ($isProduction) {
             $title = last(explode('/', $endpointData->uri));
-        } else {
+        } elseif ($endpointData->method instanceof ReflectionMethod) {
             $method = $endpointData->method;
             $className = $method->class;
             $methodName = $method->name;
@@ -37,6 +37,13 @@ class GetFromRoute extends Strategy
             $startLine = $method->getStartLine();
 
             $title = "[$className::$methodName](file://$rootDir/apps$fileName#L$startLine)";
+        } else {
+            $method = $endpointData->method;
+            $fileName = $method->getFileName();
+            $startLine = $method->getStartLine();
+            $rootDir = env('ROOT_DIR');
+
+            $title = "[Closure](file://$rootDir/apps$fileName#L$startLine)";
         }
 
         $groupName = $routePrefix[0] ?? '';
