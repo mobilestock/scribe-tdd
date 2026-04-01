@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Knuckles\Camel\Output\OutputEndpointData;
 use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator;
+use Symfony\Component\HttpFoundation\Response;
 
 class ScribeTddBaseGenerator extends BaseGenerator
 {
@@ -55,6 +56,31 @@ class ScribeTddBaseGenerator extends BaseGenerator
         return $response;
     }
 
+    protected function generateEndpointResponsesSpec(OutputEndpointData $endpoint)
+    {
+        $responses = parent::generateEndpointResponsesSpec($endpoint);
+
+        $opId = $this->operationId($endpoint);
+
+        foreach ($responses as $code => &$responseSpec) {
+            if (!isset($responseSpec['content'])) {
+                continue;
+            }
+
+            $phrase = $this->reasonPhrase((int) $code);
+
+            foreach ($responseSpec['content'] as &$mediaType) {
+                if (isset($mediaType['schema']) && is_array($mediaType['schema'])) {
+                    $mediaType['schema']['title'] = $opId . $phrase;
+                }
+            }
+            unset($mediaType);
+        }
+        unset($responseSpec);
+
+        return $responses;
+    }
+
     protected function operationId(OutputEndpointData $endpoint): string
     {
         foreach (Route::getRoutes()->getRoutes() as $route) {
@@ -85,10 +111,24 @@ class ScribeTddBaseGenerator extends BaseGenerator
         return $this->operationIdFromUri($endpoint);
     }
 
+    protected function reasonPhrase(int $code): string
+    {
+        $text = Response::$statusTexts[$code] ?? null;
+
+        if ($text === null) {
+            return (string) $code;
+        }
+
+        return Str::studly($text);
+    }
+
     protected function operationIdFromUri(OutputEndpointData $endpoint): string
     {
         $method = strtolower($endpoint->httpMethods[0] ?? 'get');
         $segments = array_filter(explode('/', $endpoint->uri));
+
+        // Remove path parameter placeholders like {id}
+        $segments = array_filter($segments, fn($s) => !str_starts_with($s, '{'));
 
         if (empty($segments)) {
             return $method;
