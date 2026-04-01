@@ -64,7 +64,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
 
             $uses = $route->getAction()['uses'] ?? null;
             if (!is_string($uses) || !str_contains($uses, '@')) {
-                continue;
+                return $this->operationIdFromUri($endpoint);
             }
 
             $action = explode('@', $uses);
@@ -82,6 +82,18 @@ class ScribeTddBaseGenerator extends BaseGenerator
             return $formattedAction;
         }
 
-        return parent::operationId($endpoint);
+        return $this->operationIdFromUri($endpoint);
+    }
+
+    protected function operationIdFromUri(OutputEndpointData $endpoint): string
+    {
+        $method = strtolower($endpoint->httpMethods[0] ?? 'get');
+        $segments = array_filter(explode('/', $endpoint->uri));
+
+        if (empty($segments)) {
+            return $method;
+        }
+
+        return $method . Str::studly(implode(' ', $segments));
     }
 }

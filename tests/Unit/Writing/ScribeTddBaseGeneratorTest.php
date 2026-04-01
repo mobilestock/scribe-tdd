@@ -68,7 +68,7 @@ describe('operationId', function () {
         expect($result)->toBe('BatchingIndexInvoices');
     });
 
-    it('skips routes with matching URI but different HTTP methods', function () {
+    it('generates URI-based operationId when no route matches', function () {
         Route::post('/only-post', 'App\Http\Controllers\OnlyPostController@store');
 
         $endpoint = makeOutputEndpointData([
@@ -85,11 +85,10 @@ describe('operationId', function () {
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
-        // No matching route for GET only-post, falls back to parent
-        expect($result)->toBeString();
+        expect($result)->toBe('getOnlyPost');
     });
 
-    it('falls back to parent for closure routes', function () {
+    it('generates URI-based operationId for closure routes', function () {
         Route::get('/health', fn() => 'ok');
 
         $endpoint = makeOutputEndpointData([
@@ -106,8 +105,47 @@ describe('operationId', function () {
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
-        // Parent generates from URI
-        expect($result)->toBeString();
+        expect($result)->toBe('getHealth');
+    });
+
+    it('uses HTTP method as operationId for root URI', function () {
+        Route::get('/', fn() => 'ok');
+
+        $endpoint = makeOutputEndpointData([
+            'uri' => '/',
+            'httpMethods' => ['GET'],
+            'metadata' => [],
+            'headers' => [],
+            'urlParameters' => [],
+            'queryParameters' => [],
+            'bodyParameters' => [],
+            'responses' => [],
+            'responseFields' => [],
+        ]);
+
+        $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
+
+        expect($result)->toBe('get');
+    });
+
+    it('generates camelCase operationId for multi-segment URI closure', function () {
+        Route::post('/api/v1/webhook', fn() => 'ok');
+
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'api/v1/webhook',
+            'httpMethods' => ['POST'],
+            'metadata' => [],
+            'headers' => [],
+            'urlParameters' => [],
+            'queryParameters' => [],
+            'bodyParameters' => [],
+            'responses' => [],
+            'responseFields' => [],
+        ]);
+
+        $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
+
+        expect($result)->toBe('postApiV1Webhook');
     });
 });
 
