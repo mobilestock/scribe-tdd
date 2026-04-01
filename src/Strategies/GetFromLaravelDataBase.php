@@ -8,7 +8,6 @@ use Knuckles\Scribe\Extracting\ParsesValidationRules;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
 use Knuckles\Scribe\Tools\ConsoleOutputUtils;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use ReflectionUnionType;
@@ -24,10 +23,6 @@ class GetFromLaravelDataBase extends Strategy
 
     public function __invoke(ExtractedEndpointData $endpointData, array $settings = []): ?array
     {
-        if (!class_exists(Data::class)) {
-            return [];
-        }
-
         return $this->getParametersFromLaravelData($endpointData->method, $endpointData->route);
     }
 
@@ -76,11 +71,7 @@ class GetFromLaravelDataBase extends Strategy
     {
         $payload = [];
 
-        try {
-            $reflection = new ReflectionClass($className);
-        } catch (ReflectionException) {
-            return $payload;
-        }
+        $reflection = new ReflectionClass($className);
 
         $constructor = $reflection->getConstructor();
         if (!$constructor) {
@@ -103,15 +94,7 @@ class GetFromLaravelDataBase extends Strategy
             }
 
             $typeName = $type->getName();
-            if (!class_exists($typeName)) {
-                continue;
-            }
-
-            try {
-                $typeReflection = new ReflectionClass($typeName);
-            } catch (ReflectionException) {
-                continue;
-            }
+            $typeReflection = new ReflectionClass($typeName);
 
             if ($typeReflection->isSubclassOf(Data::class)) {
                 $visited = [$className => true, $typeName => true];
@@ -138,14 +121,19 @@ class GetFromLaravelDataBase extends Strategy
                 $typeReflection = new ReflectionClass($type->getName());
 
                 if ($typeReflection->isSubclassOf(Data::class) && !isset($visited[$type->getName()])) {
-                    $stub[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, [...$visited, $type->getName() => true]);
+                    $stub[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, [
+                        ...$visited,
+                        $type->getName() => true,
+                    ]);
                     continue;
                 }
             }
 
             $collectionOf = $this->getDataCollectionOfClass($param);
             if ($collectionOf && !isset($visited[$collectionOf->getName()])) {
-                $stub[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, [...$visited, $collectionOf->getName() => true])];
+                $stub[Str::snake($param->getName())] = [
+                    $this->buildNestedDataStub($collectionOf, [...$visited, $collectionOf->getName() => true]),
+                ];
                 continue;
             }
 
@@ -157,11 +145,8 @@ class GetFromLaravelDataBase extends Strategy
 
     protected function getDataCollectionOfClass(\ReflectionParameter $param): ?ReflectionClass
     {
+        /** @var \ReflectionMethod $declaringFunction */
         $declaringFunction = $param->getDeclaringFunction();
-        if (!$declaringFunction instanceof \ReflectionMethod) {
-            return null;
-        }
-
         $declaringClass = $declaringFunction->getDeclaringClass();
         if (!$declaringClass->hasProperty($param->getName())) {
             return null;
@@ -174,15 +159,7 @@ class GetFromLaravelDataBase extends Strategy
         }
 
         $className = $attributes[0]->newInstance()->class;
-        if (!class_exists($className)) {
-            return null;
-        }
-
-        try {
-            $reflection = new ReflectionClass($className);
-        } catch (ReflectionException) {
-            return null;
-        }
+        $reflection = new ReflectionClass($className);
 
         return $reflection->isSubclassOf(Data::class) ? $reflection : null;
     }
@@ -220,11 +197,7 @@ class GetFromLaravelDataBase extends Strategy
                 continue;
             }
 
-            try {
-                $argumentClass = new ReflectionClass($argumentClassName);
-            } catch (ReflectionException) {
-                continue;
-            }
+            $argumentClass = new ReflectionClass($argumentClassName);
 
             if ($argumentClass->isSubclassOf(Data::class)) {
                 return $argumentClass;

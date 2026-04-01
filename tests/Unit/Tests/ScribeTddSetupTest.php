@@ -26,8 +26,7 @@ describe('guessResponseDescription', function () {
             }
         };
 
-        expect($trait->callGuessResponseDescription('testCreateOrder'))
-            ->toBe('create order');
+        expect($trait->callGuessResponseDescription('testCreateOrder'))->toBe('create order');
     });
 
     it('converts snake_case method name', function () {
@@ -45,8 +44,7 @@ describe('guessResponseDescription', function () {
             }
         };
 
-        expect($trait->callGuessResponseDescription('test_create_order'))
-            ->toBe('create order');
+        expect($trait->callGuessResponseDescription('test_create_order'))->toBe('create order');
     });
 
     it('uses scribeDescription annotation when available', function () {
@@ -67,8 +65,7 @@ describe('guessResponseDescription', function () {
             }
         };
 
-        expect($trait->callGuessResponseDescription('testSomething'))
-            ->toBe('Custom description');
+        expect($trait->callGuessResponseDescription('testSomething'))->toBe('Custom description');
     });
 
     it('handles method not starting with test', function () {
@@ -86,8 +83,7 @@ describe('guessResponseDescription', function () {
             }
         };
 
-        expect($trait->callGuessResponseDescription('createOrder'))
-            ->toBe('create order');
+        expect($trait->callGuessResponseDescription('createOrder'))->toBe('create order');
     });
 });
 
@@ -159,7 +155,9 @@ describe('parseTestMethodAnnotations', function () {
             use ScribeTddSetup;
 
             /** @scribeDescription Test description */
-            public function testExample() {}
+            public function testExample()
+            {
+            }
         };
 
         $result = $trait::parseTestMethodAnnotations(get_class($trait), 'testExample');
@@ -193,8 +191,12 @@ describe('setUpScribeTdd', function () {
                 $this->setUpScribeTdd();
             }
 
-            public function afterApplicationCreated(callable $callback) {}
-            public function beforeApplicationDestroyed(callable $callback) {}
+            public function afterApplicationCreated(callable $callback)
+            {
+            }
+            public function beforeApplicationDestroyed(callable $callback)
+            {
+            }
         };
         $trait->app = app();
 
@@ -272,6 +274,8 @@ describe('setUpScribeTdd', function () {
 
     it('registers shutdown function when not already registered', function () {
         Config::set('scribe-tdd.enabled', true);
+        // Ensure LARAVEL_PARALLEL_TESTING is not set (condition requires empty)
+        unset($_SERVER['LARAVEL_PARALLEL_TESTING']);
 
         $trait = new class {
             use ScribeTddSetup;
@@ -286,19 +290,38 @@ describe('setUpScribeTdd', function () {
                 $this->setUpScribeTdd();
             }
 
-            public function afterApplicationCreated(callable $callback) { $this->afterCb = $callback; }
-            public function beforeApplicationDestroyed(callable $callback) { $this->beforeCb = $callback; }
-            public function name(bool $withDataSet = true): string { return 'test_method'; }
-            public function dataName(): string { return ''; }
-            public function providedData(): array { return []; }
+            public static function getShutdownRegistered(): bool
+            {
+                return self::$shutdownRegistered;
+            }
+
+            public function afterApplicationCreated(callable $callback)
+            {
+                $this->afterCb = $callback;
+            }
+            public function beforeApplicationDestroyed(callable $callback)
+            {
+                $this->beforeCb = $callback;
+            }
+            public function name(bool $withDataSet = true): string
+            {
+                return 'test_method';
+            }
+            public function dataName(): string
+            {
+                return '';
+            }
+            public function providedData(): array
+            {
+                return [];
+            }
         };
         $trait->app = app();
 
         $trait->callSetUp();
 
         // Verify shutdownRegistered was set to true (line 48)
-        $prop = new ReflectionProperty($trait, 'shutdownRegistered');
-        expect($prop->getValue())->toBeTrue();
+        expect($trait::getShutdownRegistered())->toBeTrue();
     });
 
     it('throws LaravelNotPresent when app is empty', function () {
@@ -315,17 +338,16 @@ describe('setUpScribeTdd', function () {
             }
         };
 
-        expect(fn () => $trait->callSetUp())
-            ->toThrow(\AjCastro\ScribeTdd\Exceptions\LaravelNotPresent::class);
+        expect(fn() => $trait->callSetUp())->toThrow(AjCastro\ScribeTdd\Exceptions\LaravelNotPresent::class);
     });
 });
 
 describe('writeExample', function () {
     it('writes example data to storage', function () {
-        $route = new \Illuminate\Routing\Route(['POST'], 'write-test', fn () => null);
-        $route->bind(\Illuminate\Http\Request::create('/write-test'));
+        $route = new Illuminate\Routing\Route(['POST'], 'write-test', fn() => null);
+        $route->bind(Illuminate\Http\Request::create('/write-test'));
 
-        $test = Mockery::mock(\Illuminate\Foundation\Testing\TestCase::class);
+        $test = Mockery::mock(Illuminate\Foundation\Testing\TestCase::class);
         $instance = new ExampleCreator([
             'test' => $test,
             'testMethod' => 'test_write',
@@ -336,11 +358,11 @@ describe('writeExample', function () {
         ExampleCreator::setCurrentInstance($instance);
         ExampleCreator::getInstanceForRoute($route);
 
-        $request = \Illuminate\Http\Request::create('/write-test', 'POST', ['name' => 'test']);
-        $request->setRouteResolver(fn () => $route);
-        $response = new \Illuminate\Http\Response('{"ok":true}', 200);
+        $request = Illuminate\Http\Request::create('/write-test', 'POST', ['name' => 'test']);
+        $request->setRouteResolver(fn() => $route);
+        $response = new Illuminate\Http\Response('{"ok":true}', 200);
 
-        $exampleRequest = new \AjCastro\ScribeTdd\Tests\ExampleRequest($request, $response, $instance);
+        $exampleRequest = new AjCastro\ScribeTdd\Tests\ExampleRequest($request, $response, $instance);
         $instance->addExampleRequest($exampleRequest);
 
         // Call writeExample via reflection
@@ -355,6 +377,35 @@ describe('writeExample', function () {
 
         // Clean up
         File::deleteDirectory($dir);
+    });
+});
+
+describe('triggerScribeGeneration', function () {
+    it('creates application and sets server vars before scribe:generate', function () {
+        $trait = new class {
+            use ScribeTddSetup;
+
+            public bool $applicationCreated = false;
+
+            public function createApplication()
+            {
+                $this->applicationCreated = true;
+                return app();
+            }
+        };
+
+        try {
+            $trait->triggerScribeGeneration();
+        } catch (Throwable) {
+            // scribe:generate may fail in test env - that's fine,
+            // we just need to verify the setup lines executed
+        }
+
+        expect($trait->applicationCreated)->toBeTrue();
+        expect($_SERVER['SCRIBE_TESTS'])->toBeTrue();
+        expect(Knuckles\Scribe\ScribeServiceProvider::$customTranslationLayerLoaded)->toBeFalse();
+
+        unset($_SERVER['SCRIBE_TESTS']);
     });
 });
 

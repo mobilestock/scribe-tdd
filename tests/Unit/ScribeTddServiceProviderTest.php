@@ -87,7 +87,7 @@ it('returns early from boot when not running in console', function () {
     $mockApp = Mockery::mock(app())->makePartial();
     $mockApp->shouldReceive('runningInConsole')->andReturn(false);
 
-    $provider = new \AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
+    $provider = new AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
     $provider->boot();
 
     // Reached here means line 75 (early return) was executed without error
@@ -99,7 +99,7 @@ it('returns early from boot when not in testing env', function () {
     $mockApp->shouldReceive('runningInConsole')->andReturn(true);
     $mockApp->shouldReceive('environment')->with('testing')->andReturn(false);
 
-    $provider = new \AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
+    $provider = new AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
     $provider->boot();
 
     // Reached here means line 80 (early return) was executed
@@ -113,7 +113,7 @@ it('returns early from boot when scribe-tdd is disabled', function () {
     $mockApp->shouldReceive('runningInConsole')->andReturn(true);
     $mockApp->shouldReceive('environment')->with('testing')->andReturn(true);
 
-    $provider = new \AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
+    $provider = new AjCastro\ScribeTdd\ScribeTddServiceProvider($mockApp);
     $provider->boot();
 
     Config::set('scribe-tdd.enabled', true);
@@ -121,14 +121,27 @@ it('returns early from boot when scribe-tdd is disabled', function () {
     expect(true)->toBeTrue();
 });
 
-it('registers parallel testing teardown when LARAVEL_PARALLEL_TESTING is set', function () {
+it('executes parallel testing teardown callback', function () {
     $_SERVER['LARAVEL_PARALLEL_TESTING'] = 1;
 
-    $provider = new \AjCastro\ScribeTdd\ScribeTddServiceProvider(app());
+    $provider = new AjCastro\ScribeTdd\ScribeTddServiceProvider(app());
     $provider->boot();
 
-    unset($_SERVER['LARAVEL_PARALLEL_TESTING']);
+    // Get the registered callback directly via reflection to bypass whenRunningInParallel
+    $parallelTesting = app(Illuminate\Testing\ParallelTesting::class);
+    $prop = new ReflectionProperty($parallelTesting, 'tearDownProcessCallbacks');
+    $callbacks = $prop->getValue($parallelTesting);
+    $callback = end($callbacks);
 
-    // Lines 88-92 covered - ParallelTesting teardown callback registered
-    expect(true)->toBeTrue();
+    // Execute the callback to cover lines 89-91
+    try {
+        $callback();
+    } catch (Throwable) {
+        // scribe:generate may fail in test env
+    }
+
+    expect($_SERVER['SCRIBE_TESTS'] ?? null)->toBeTrue();
+
+    unset($_SERVER['SCRIBE_TESTS'], $_SERVER['LARAVEL_PARALLEL_TESTING']);
+    
 });

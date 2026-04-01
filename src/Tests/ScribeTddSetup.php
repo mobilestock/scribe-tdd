@@ -10,7 +10,6 @@ use Illuminate\Support\Facades\App;
 use PHPUnit\Metadata\Annotation\Parser\Registry;
 use Illuminate\Support\Facades\Artisan;
 use Knuckles\Scribe\ScribeServiceProvider;
-use PHPUnit\Util\Test as TestUtil;
 use Str;
 
 trait ScribeTddSetup
@@ -38,15 +37,18 @@ trait ScribeTddSetup
         });
 
         if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
-            register_shutdown_function(function () {
-                $this->createApplication();
-
-                $_SERVER['SCRIBE_TESTS'] = true;
-                ScribeServiceProvider::$customTranslationLayerLoaded = false;
-                Artisan::call('scribe:generate');
-            });
+            register_shutdown_function(fn() => $this->triggerScribeGeneration());
             self::$shutdownRegistered = true;
         }
+    }
+
+    public function triggerScribeGeneration(): void
+    {
+        $this->createApplication();
+
+        $_SERVER['SCRIBE_TESTS'] = true;
+        ScribeServiceProvider::$customTranslationLayerLoaded = false;
+        Artisan::call('scribe:generate');
     }
 
     private function makeExample(): void
@@ -127,10 +129,6 @@ trait ScribeTddSetup
 
     public static function parseTestMethodAnnotations(string $className, ?string $methodName = null): array
     {
-        if (method_exists(TestUtil::class, 'parseTestMethodAnnotations')) {
-            return TestUtil::parseTestMethodAnnotations(static::class, $methodName);
-        }
-
         $registry = Registry::getInstance();
 
         if ($methodName !== null) {

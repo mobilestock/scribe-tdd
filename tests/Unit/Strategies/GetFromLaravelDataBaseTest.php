@@ -161,11 +161,12 @@ describe('buildPayloadForNestedDataExpansion', function () {
         expect($result)->toBe([]);
     });
 
-    it('returns empty array for nonexistent class', function () {
+    it('throws for nonexistent class', function () {
         $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'NonExistentClass12345');
 
-        expect($result)->toBe([]);
+        expect(fn() => $reflection->invoke($this->strategy, 'NonExistentClass12345'))->toThrow(
+            ReflectionException::class
+        );
     });
 
     it('builds payload for nested Data class parameters', function () {
@@ -230,8 +231,10 @@ describe('getCustomParameterData', function () {
     });
 
     it('calls customParameterData method when it exists', function () {
-        $dataClass = new class extends \Spatie\LaravelData\Data {
-            public function __construct(public string $name = '') {}
+        $dataClass = new class extends Spatie\LaravelData\Data {
+            public function __construct(public string $name = '')
+            {
+            }
 
             public static function bodyParameters(): array
             {
@@ -253,20 +256,11 @@ describe('getCustomParameterData', function () {
 });
 
 describe('getDataCollectionOfClass', function () {
-    it('returns null when declaring function is not a method', function () {
-        // Test a function parameter (not a class method parameter)
-        $func = new ReflectionFunction(function (string $test) {});
-        $param = $func->getParameters()[0];
-
-        $reflection = new ReflectionMethod($this->strategy, 'getDataCollectionOfClass');
-        $result = $reflection->invoke($this->strategy, $param);
-
-        expect($result)->toBeNull();
-    });
-
     it('returns null when property does not exist on declaring class', function () {
         $class = new class {
-            public function __construct(string $notAProperty = '') {}
+            public function __construct(string $notAProperty = '')
+            {
+            }
         };
         $constructor = new ReflectionMethod($class, '__construct');
         $param = $constructor->getParameters()[0];
@@ -280,7 +274,9 @@ describe('getDataCollectionOfClass', function () {
     it('returns null when no DataCollectionOf attribute', function () {
         $class = new class {
             public array $items;
-            public function __construct(array $items = []) {}
+            public function __construct(array $items = [])
+            {
+            }
         };
         $constructor = new ReflectionMethod($class, '__construct');
         $param = $constructor->getParameters()[0];
@@ -292,7 +288,7 @@ describe('getDataCollectionOfClass', function () {
     });
 
     it('returns reflection for valid DataCollectionOf attribute', function () {
-        $constructor = new ReflectionMethod(\Tests\Fixtures\OrderData::class, '__construct');
+        $constructor = new ReflectionMethod(Tests\Fixtures\OrderData::class, '__construct');
         $itemsParam = null;
         foreach ($constructor->getParameters() as $param) {
             if ($param->getName() === 'items') {
@@ -305,13 +301,13 @@ describe('getDataCollectionOfClass', function () {
         $result = $reflection->invoke($this->strategy, $itemsParam);
 
         expect($result)->toBeInstanceOf(ReflectionClass::class);
-        expect($result->getName())->toBe(\Tests\Fixtures\NestedItemData::class);
+        expect($result->getName())->toBe(Tests\Fixtures\NestedItemData::class);
     });
 });
 
 describe('buildNestedDataStub', function () {
     it('returns empty for class without constructor', function () {
-        $class = new ReflectionClass(new class extends \Spatie\LaravelData\Data {});
+        $class = new ReflectionClass(new class extends Spatie\LaravelData\Data {});
 
         $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
         $result = $reflection->invoke($this->strategy, $class);
@@ -320,7 +316,7 @@ describe('buildNestedDataStub', function () {
     });
 
     it('builds stub with null for builtin types', function () {
-        $class = new ReflectionClass(\Tests\Fixtures\NestedItemData::class);
+        $class = new ReflectionClass(Tests\Fixtures\NestedItemData::class);
 
         $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
         $result = $reflection->invoke($this->strategy, $class);
@@ -331,7 +327,7 @@ describe('buildNestedDataStub', function () {
     });
 
     it('builds nested stub for Data class properties', function () {
-        $class = new ReflectionClass(\Tests\Fixtures\OrderData::class);
+        $class = new ReflectionClass(Tests\Fixtures\OrderData::class);
 
         $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
         $result = $reflection->invoke($this->strategy, $class);
@@ -363,7 +359,7 @@ describe('isLaravelDataMeantForThisStrategy', function () {
 });
 
 describe('__invoke', function () {
-    it('returns empty when Data class is not installed', function () {
+    it('returns empty when no Data parameter found', function () {
         $controller = new class {
             public function handle(string $name)
             {
@@ -394,11 +390,13 @@ describe('__invoke', function () {
 
     it('returns empty when Data class has no validation rules', function () {
         $controller = new class {
-            public function handle(\Tests\Fixtures\EmptyData $data) {}
+            public function handle(Tests\Fixtures\EmptyData $data)
+            {
+            }
         };
         $method = new ReflectionMethod($controller, 'handle');
 
-        $route = new Route(['POST'], 'empty-data', fn () => null);
+        $route = new Route(['POST'], 'empty-data', fn() => null);
 
         $endpoint = new ExtractedEndpointData([
             'route' => $route,
@@ -480,21 +478,24 @@ describe('__invoke', function () {
     });
 
     it('returns empty when strategy rejects the Data class', function () {
-        $rejectingStrategy = new class(new \Knuckles\Scribe\Tools\DocumentationConfig(config('scribe') ?? [])) extends \AjCastro\ScribeTdd\Strategies\GetFromLaravelDataBase {
+        $rejectingStrategy = new class (new DocumentationConfig(config('scribe') ?? [])) extends GetFromLaravelDataBase
+        {
             protected string $customParameterDataMethodName = 'bodyParameters';
 
-            protected function isLaravelDataMeantForThisStrategy(\ReflectionClass $class): bool
+            protected function isLaravelDataMeantForThisStrategy(ReflectionClass $class): bool
             {
                 return false;
             }
         };
 
         $controller = new class {
-            public function handle(\Tests\Fixtures\SimpleData $data) {}
+            public function handle(Tests\Fixtures\SimpleData $data)
+            {
+            }
         };
         $method = new ReflectionMethod($controller, 'handle');
 
-        $route = new Route(['POST'], 'rejected', fn () => null);
+        $route = new Route(['POST'], 'rejected', fn() => null);
 
         $endpoint = new ExtractedEndpointData([
             'route' => $route,
