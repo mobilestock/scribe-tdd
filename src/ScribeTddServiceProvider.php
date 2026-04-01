@@ -42,7 +42,7 @@ class ScribeTddServiceProvider extends ServiceProvider
             'queryParameters' => [
                 Strategies\QueryParameters\GetFromLaravelData::class,
                 Strategies\QueryParameters\GetFromInlineValidator::class,
-                Strategies\QueryParameters\GetFromTestResult::class,
+                \AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromTestResult::class,
             ],
             'headers' => [
                 Strategies\Headers\GetFromHeaderTagFromScribeTdd::class,
