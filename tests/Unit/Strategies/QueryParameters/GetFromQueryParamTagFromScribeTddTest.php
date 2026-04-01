@@ -3,7 +3,6 @@
 use AjCastro\ScribeTdd\Strategies\QueryParameters\GetFromQueryParamTagFromScribeTdd;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
@@ -23,7 +22,7 @@ it('returns empty array when no test result exists', function () {
         'handle'
     );
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'no-result',
         'httpMethods' => ['GET'],
@@ -50,7 +49,7 @@ it('extracts query params from docblock when test result exists', function () {
 
     $method = new ReflectionMethod(Tests\Fixtures\FakeTestController::class, 'show');
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],

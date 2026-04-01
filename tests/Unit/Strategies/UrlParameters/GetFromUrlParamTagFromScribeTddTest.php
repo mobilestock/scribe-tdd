@@ -3,7 +3,6 @@
 use AjCastro\ScribeTdd\Strategies\UrlParameters\GetFromUrlParamTagFromScribeTdd;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Tests\Fixtures\FakeTestController;
 
@@ -24,7 +23,7 @@ it('returns empty array when no test result exists', function () {
         'handle'
     );
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],
@@ -51,7 +50,7 @@ it('extracts url params from docblock when test result exists', function () {
 
     $method = new ReflectionMethod(FakeTestController::class, 'show');
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],

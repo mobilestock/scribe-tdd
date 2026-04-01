@@ -1,7 +1,6 @@
 <?php
 
 use AjCastro\ScribeTdd\Strategies\GetFromLaravelDataBase;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Illuminate\Routing\Route;
 
@@ -369,7 +368,7 @@ describe('__invoke', function () {
 
         $route = new Route(['POST'], 'test', fn() => null);
 
-        $endpoint = new ExtractedEndpointData([
+        $endpoint = makeEndpointData([
             'route' => $route,
             'uri' => 'test',
             'httpMethods' => ['POST'],
@@ -398,7 +397,7 @@ describe('__invoke', function () {
 
         $route = new Route(['POST'], 'empty-data', fn() => null);
 
-        $endpoint = new ExtractedEndpointData([
+        $endpoint = makeEndpointData([
             'route' => $route,
             'uri' => 'empty-data',
             'httpMethods' => ['POST'],
@@ -427,7 +426,7 @@ describe('__invoke', function () {
 
         $route = new Route(['POST'], 'simple-data', fn() => null);
 
-        $endpoint = new ExtractedEndpointData([
+        $endpoint = makeEndpointData([
             'route' => $route,
             'uri' => 'simple-data',
             'httpMethods' => ['POST'],
@@ -457,7 +456,7 @@ describe('__invoke', function () {
 
         $route = new Route(['POST'], 'order-data', fn() => null);
 
-        $endpoint = new ExtractedEndpointData([
+        $endpoint = makeEndpointData([
             'route' => $route,
             'uri' => 'order-data',
             'httpMethods' => ['POST'],
@@ -497,7 +496,7 @@ describe('__invoke', function () {
 
         $route = new Route(['POST'], 'rejected', fn() => null);
 
-        $endpoint = new ExtractedEndpointData([
+        $endpoint = makeEndpointData([
             'route' => $route,
             'uri' => 'rejected',
             'httpMethods' => ['POST'],

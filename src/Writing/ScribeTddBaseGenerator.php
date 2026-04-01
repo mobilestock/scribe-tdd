@@ -5,7 +5,6 @@ namespace AjCastro\ScribeTdd\Writing;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Knuckles\Camel\Output\OutputEndpointData;
-use Knuckles\Camel\Output\Parameter;
 use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator;
 
 class ScribeTddBaseGenerator extends BaseGenerator
@@ -25,15 +24,24 @@ class ScribeTddBaseGenerator extends BaseGenerator
         return parent::generateResponseContentSpec($responseContent, $endpoint);
     }
 
-    protected function queryParamToOpenApiParameterObject(string $name, Parameter $details): array
+    protected function generateEndpointParametersSpec(OutputEndpointData $endpoint): array
     {
-        $parameterData = parent::queryParamToOpenApiParameterObject($name, $details);
+        $parameters = parent::generateEndpointParametersSpec($endpoint);
 
-        if (str_contains($details['type'], '[]')) {
-            $parameterData['name'] = $name . '[]';
+        foreach ($parameters as &$param) {
+            if (($param['in'] ?? '') !== 'query') {
+                continue;
+            }
+
+            $name = $param['name'];
+            $details = $endpoint->queryParameters[$name] ?? null;
+
+            if ($details && str_contains($details['type'], '[]')) {
+                $param['name'] = $name . '[]';
+            }
         }
 
-        return $parameterData;
+        return $parameters;
     }
 
     public function generateSchemaForResponseValue(mixed $value, OutputEndpointData $endpoint, string $path): array

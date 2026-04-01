@@ -10,8 +10,8 @@
     }
   ],
   "require": {
-    "knuckleswtf/scribe": "^5.2",
-    "spatie/laravel-data": "^4.20"
+    "knuckleswtf/scribe": "5.2",
+    "spatie/laravel-data": "4.20"
   },
   "require-dev": {
     "pestphp/pest": "^3.0",

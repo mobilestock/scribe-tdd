@@ -2,7 +2,6 @@
 
 use AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromInlineValidator;
 use Illuminate\Routing\Route;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
@@ -20,7 +19,7 @@ it('is meant for non-GET routes', function () {
         'store'
     );
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'items',
         'httpMethods' => ['POST'],
@@ -54,7 +53,7 @@ it('is not meant for GET routes', function () {
         'index'
     );
 
-    $endpoint = new ExtractedEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => 'items',
         'httpMethods' => ['GET'],

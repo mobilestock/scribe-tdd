@@ -2,8 +2,6 @@
 
 use AjCastro\ScribeTdd\Writing\ScribeTddBaseGenerator;
 use Illuminate\Support\Facades\Route;
-use Knuckles\Camel\Output\OutputEndpointData;
-use Knuckles\Camel\Output\Parameter;
 
 beforeEach(function () {
     $this->generator = app(ScribeTddBaseGenerator::class);
@@ -13,7 +11,7 @@ describe('operationId', function () {
     it('strips Controller suffix from controller name', function () {
         Route::get('/invoices', 'App\Http\Controllers\InvoiceController@index');
 
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'invoices',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -33,7 +31,7 @@ describe('operationId', function () {
     it('keeps controller name without Controller suffix unchanged', function () {
         Route::post('/domains', 'App\Http\Controllers\Domain@store');
 
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'domains',
             'httpMethods' => ['POST'],
             'metadata' => [],
@@ -53,7 +51,7 @@ describe('operationId', function () {
     it('appends model name for batching routes', function () {
         Route::get('/batching/invoices', 'App\Http\Controllers\BatchingController@index');
 
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'batching/invoices',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -73,7 +71,7 @@ describe('operationId', function () {
     it('skips routes with matching URI but different HTTP methods', function () {
         Route::post('/only-post', 'App\Http\Controllers\OnlyPostController@store');
 
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'only-post',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -94,7 +92,7 @@ describe('operationId', function () {
     it('falls back to parent for closure routes', function () {
         Route::get('/health', fn() => 'ok');
 
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'health',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -115,7 +113,7 @@ describe('operationId', function () {
 
 describe('generateResponseContentSpec', function () {
     it('flattens PSR-7 array headers to strings', function () {
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -143,41 +141,68 @@ describe('generateResponseContentSpec', function () {
     });
 });
 
-describe('queryParamToOpenApiParameterObject', function () {
+describe('generateEndpointParametersSpec', function () {
     it('appends brackets for array query params', function () {
-        $param = new Parameter([
-            'name' => 'ids',
-            'type' => 'integer[]',
-            'description' => 'List of IDs',
-            'required' => false,
-            'example' => [1, 2],
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'metadata' => [],
+            'headers' => ['X-Custom' => 'value'],
+            'urlParameters' => [],
+            'queryParameters' => [
+                'ids' => [
+                    'name' => 'ids',
+                    'type' => 'integer[]',
+                    'description' => 'List of IDs',
+                    'required' => false,
+                    'example' => [1, 2],
+                ],
+            ],
+            'bodyParameters' => [],
+            'responses' => [],
+            'responseFields' => [],
         ]);
 
-        $reflection = new ReflectionMethod($this->generator, 'queryParamToOpenApiParameterObject');
-        $result = $reflection->invoke($this->generator, 'ids', $param);
+        $reflection = new ReflectionMethod($this->generator, 'generateEndpointParametersSpec');
+        $result = $reflection->invoke($this->generator, $endpoint);
 
-        expect($result['name'])->toBe('ids[]');
+        $queryParam = collect($result)->firstWhere('name', 'ids[]');
+        expect($queryParam)->not->toBeNull();
+        expect($queryParam['name'])->toBe('ids[]');
     });
 
     it('does not append brackets for non-array params', function () {
-        $param = new Parameter([
-            'name' => 'page',
-            'type' => 'integer',
-            'description' => 'Page number',
-            'required' => false,
-            'example' => 1,
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'metadata' => [],
+            'headers' => [],
+            'urlParameters' => [],
+            'queryParameters' => [
+                'page' => [
+                    'name' => 'page',
+                    'type' => 'integer',
+                    'description' => 'Page number',
+                    'required' => false,
+                    'example' => 1,
+                ],
+            ],
+            'bodyParameters' => [],
+            'responses' => [],
+            'responseFields' => [],
         ]);
 
-        $reflection = new ReflectionMethod($this->generator, 'queryParamToOpenApiParameterObject');
-        $result = $reflection->invoke($this->generator, 'page', $param);
+        $reflection = new ReflectionMethod($this->generator, 'generateEndpointParametersSpec');
+        $result = $reflection->invoke($this->generator, $endpoint);
 
-        expect($result['name'])->toBe('page');
+        $queryParam = collect($result)->firstWhere('in', 'query');
+        expect($queryParam['name'])->toBe('page');
     });
 });
 
 describe('generateSchemaForResponseValue', function () {
     it('adds int64 format for large integers', function () {
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
             'metadata' => [],
@@ -196,7 +221,7 @@ describe('generateSchemaForResponseValue', function () {
     });
 
     it('does not add int64 format for small integers', function () {
-        $endpoint = new OutputEndpointData([
+        $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
             'metadata' => [],

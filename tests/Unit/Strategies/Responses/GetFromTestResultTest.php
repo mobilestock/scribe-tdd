@@ -3,7 +3,6 @@
 use AjCastro\ScribeTdd\Strategies\Responses\GetFromTestResult;
 use AjCastro\ScribeTdd\TestResults\RouteTestResult;
 use Illuminate\Support\Facades\File;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
@@ -15,7 +14,7 @@ beforeEach(function () {
     $property->setValue(null, []);
 });
 
-function makeEndpointForResponseTest(string $uri, $route): ExtractedEndpointData
+function makeEndpointForResponseTest(string $uri, $route)
 {
     $controller = new class {
         public function handle()
@@ -24,7 +23,7 @@ function makeEndpointForResponseTest(string $uri, $route): ExtractedEndpointData
         }
     };
 
-    return new ExtractedEndpointData([
+    return makeEndpointData([
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => ['GET'],

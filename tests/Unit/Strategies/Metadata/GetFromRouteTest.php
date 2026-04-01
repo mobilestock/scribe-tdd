@@ -3,25 +3,41 @@
 use AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
-use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
     $this->strategy = new GetFromRoute(new DocumentationConfig(config('scribe') ?? []));
 });
 
-function makeEndpoint(string $uri, array $httpMethods, $route): ExtractedEndpointData
+function makeEndpoint(string $uri, array $httpMethods, $route)
 {
     $controller = new class {
         public function handle() { return 'ok'; }
     };
     $method = new ReflectionMethod($controller, 'handle');
 
-    return new ExtractedEndpointData([
+    return makeEndpointData([
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => $httpMethods,
         'method' => $method,
+        'metadata' => [],
+        'headers' => [],
+        'urlParameters' => [],
+        'queryParameters' => [],
+        'bodyParameters' => [],
+        'responses' => [],
+        'responseFields' => [],
+    ]);
+}
+
+function makeClosureEndpoint(string $uri, array $httpMethods, $route, Closure $closure)
+{
+    return makeEndpointData([
+        'route' => $route,
+        'uri' => $uri,
+        'httpMethods' => $httpMethods,
+        'method' => new \ReflectionFunction($closure),
         'metadata' => [],
         'headers' => [],
         'urlParameters' => [],
@@ -110,6 +126,28 @@ it('uses second prefix segment as subgroup', function () {
 
     expect($result['groupName'])->toBe('api');
     expect($result['subgroup'])->toBe('v2');
+});
+
+it('generates file link for closure routes pointing to route file', function () {
+    Config::set('app.url', 'http://localhost');
+    putenv('ROOT_DIR=/test/root');
+
+    $closure = function () { return 'ok'; };
+    Route::get('/closure-link-test', $closure);
+
+    $route = findRoute('GET', '/closure-link-test');
+    $endpointData = makeClosureEndpoint('closure-link-test', ['GET'], $route, $closure);
+
+    $result = $this->strategy->__invoke($endpointData);
+
+    $reflection = new \ReflectionFunction($closure);
+    $expectedFile = $reflection->getFileName();
+    $expectedLine = $reflection->getStartLine();
+    $expectedBaseName = basename($expectedFile);
+
+    expect($result['title'])->toBe("[$expectedBaseName:$expectedLine](file:///test/root/apps$expectedFile#L$expectedLine)");
+
+    putenv('ROOT_DIR');
 });
 
 it('returns all expected metadata keys', function () {
