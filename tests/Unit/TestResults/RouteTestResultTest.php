@@ -16,23 +16,29 @@ describe('loadTestResults', function () {
         $dir = storage_path('scribe-tdd/test-merge');
         File::makeDirectory($dir, 0755, true, true);
 
-        File::put($dir . '/file1.json', json_encode([
-            'test_class' => 'TestClass1',
-            'test_method' => 'testMethod1',
-            'url_params' => ['id' => ['type' => 'integer', 'example' => 1]],
-            'query_params' => ['page' => ['type' => 'integer', 'example' => 1]],
-            'body_params' => ['name' => ['type' => 'string', 'example' => 'John']],
-            'responses' => [['status' => 200, 'content' => '{"ok":true}']],
-        ]));
+        File::put(
+            $dir . '/file1.json',
+            json_encode([
+                'test_class' => 'TestClass1',
+                'test_method' => 'testMethod1',
+                'url_params' => ['id' => ['type' => 'integer', 'example' => 1]],
+                'query_params' => ['page' => ['type' => 'integer', 'example' => 1]],
+                'body_params' => ['name' => ['type' => 'string', 'example' => 'John']],
+                'responses' => [['status' => 200, 'content' => '{"ok":true}']],
+            ])
+        );
 
-        File::put($dir . '/file2.json', json_encode([
-            'test_class' => 'TestClass2',
-            'test_method' => 'testMethod2',
-            'url_params' => ['slug' => ['type' => 'string', 'example' => 'abc']],
-            'query_params' => ['limit' => ['type' => 'integer', 'example' => 10]],
-            'body_params' => ['email' => ['type' => 'string', 'example' => 'a@b.c']],
-            'responses' => [['status' => 201, 'content' => '{"created":true}']],
-        ]));
+        File::put(
+            $dir . '/file2.json',
+            json_encode([
+                'test_class' => 'TestClass2',
+                'test_method' => 'testMethod2',
+                'url_params' => ['slug' => ['type' => 'string', 'example' => 'abc']],
+                'query_params' => ['limit' => ['type' => 'integer', 'example' => 10]],
+                'body_params' => ['email' => ['type' => 'string', 'example' => 'a@b.c']],
+                'responses' => [['status' => 201, 'content' => '{"created":true}']],
+            ])
+        );
 
         $result = RouteTestResult::loadTestResults($dir);
 
@@ -48,17 +54,26 @@ describe('loadTestResults', function () {
         $dir = storage_path('scribe-tdd/test-dedup');
         File::makeDirectory($dir, 0755, true, true);
 
-        File::put($dir . '/file1.json', json_encode([
-            'responses' => [['status' => 200, 'content' => '{"data":"first"}']],
-        ]));
+        File::put(
+            $dir . '/file1.json',
+            json_encode([
+                'responses' => [['status' => 200, 'content' => '{"data":"first"}']],
+            ])
+        );
 
-        File::put($dir . '/file2.json', json_encode([
-            'responses' => [['status' => 200, 'content' => '{"data":"second"}']],
-        ]));
+        File::put(
+            $dir . '/file2.json',
+            json_encode([
+                'responses' => [['status' => 200, 'content' => '{"data":"second"}']],
+            ])
+        );
 
-        File::put($dir . '/file3.json', json_encode([
-            'responses' => [['status' => 422, 'content' => '{"error":"fail"}']],
-        ]));
+        File::put(
+            $dir . '/file3.json',
+            json_encode([
+                'responses' => [['status' => 422, 'content' => '{"error":"fail"}']],
+            ])
+        );
 
         $result = RouteTestResult::loadTestResults($dir);
 
@@ -74,13 +89,19 @@ describe('loadTestResults', function () {
         $dir = storage_path('scribe-tdd/test-first');
         File::makeDirectory($dir, 0755, true, true);
 
-        File::put($dir . '/01-file.json', json_encode([
-            'responses' => [['status' => 200, 'content' => '{"winner":"first"}']],
-        ]));
+        File::put(
+            $dir . '/01-file.json',
+            json_encode([
+                'responses' => [['status' => 200, 'content' => '{"winner":"first"}']],
+            ])
+        );
 
-        File::put($dir . '/02-file.json', json_encode([
-            'responses' => [['status' => 200, 'content' => '{"loser":"second"}']],
-        ]));
+        File::put(
+            $dir . '/02-file.json',
+            json_encode([
+                'responses' => [['status' => 200, 'content' => '{"loser":"second"}']],
+            ])
+        );
 
         $result = RouteTestResult::loadTestResults($dir);
 
@@ -94,13 +115,19 @@ describe('loadTestResults', function () {
         $dir = storage_path('scribe-tdd/test-plus');
         File::makeDirectory($dir, 0755, true, true);
 
-        File::put($dir . '/file1.json', json_encode([
-            'body_params' => ['name' => ['type' => 'string', 'example' => 'First']],
-        ]));
+        File::put(
+            $dir . '/file1.json',
+            json_encode([
+                'body_params' => ['name' => ['type' => 'string', 'example' => 'First']],
+            ])
+        );
 
-        File::put($dir . '/file2.json', json_encode([
-            'body_params' => ['name' => ['type' => 'string', 'example' => 'Second']],
-        ]));
+        File::put(
+            $dir . '/file2.json',
+            json_encode([
+                'body_params' => ['name' => ['type' => 'string', 'example' => 'Second']],
+            ])
+        );
 
         $result = RouteTestResult::loadTestResults($dir);
 
@@ -121,6 +148,37 @@ describe('loadTestResults', function () {
         expect($result['responses'])->toBe([]);
 
         File::deleteDirectory($dir);
+    });
+});
+
+describe('getTestResultForRoute', function () {
+    it('returns cached result on second call', function () {
+        $route = new Illuminate\Routing\Route(['GET'], 'cache-test', fn() => null);
+        $dir = AjCastro\ScribeTdd\Tests\ExampleCreator::writeDir($route);
+
+        File::makeDirectory($dir, 0755, true, true);
+        File::put(
+            $dir . '/result.json',
+            json_encode([
+                'test_class' => 'CacheClass',
+                'test_method' => 'testCache',
+                'url_params' => [],
+                'query_params' => [],
+                'body_params' => [],
+                'responses' => [],
+            ])
+        );
+
+        // First call - loads from disk
+        $result1 = RouteTestResult::getTestResultForRoute($route);
+        expect($result1['test_class'])->toBe('CacheClass');
+
+        // Remove the file to prove second call uses cache
+        File::deleteDirectory($dir);
+
+        // Second call - should return cached result
+        $result2 = RouteTestResult::getTestResultForRoute($route);
+        expect($result2['test_class'])->toBe('CacheClass');
     });
 });
 
