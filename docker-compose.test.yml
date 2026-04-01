@@ -1,0 +1,8 @@
+services:
+  scribe-tdd:
+    extends:
+      file: docker-compose.base.yml
+      service: pest-base
+    volumes:
+      - './packages/scribe-tdd:/scribe-tdd'
+    working_dir: /scribe-tdd

@@ -12,11 +12,20 @@
   ],
   "require": {
     "knuckleswtf/scribe": "^5.2",
-    "pestphp/pest": "^3.0"
+    "spatie/laravel-data": "4.20"
+  },
+  "require-dev": {
+    "pestphp/pest": "^3.0",
+    "orchestra/testbench": "^9.5"
   },
   "autoload": {
     "psr-4": {
       "AjCastro\\ScribeTdd\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Tests\\": "tests/"
     }
   },
   "extra": {
