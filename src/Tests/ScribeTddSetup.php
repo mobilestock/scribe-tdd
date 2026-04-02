@@ -4,7 +4,6 @@ namespace AjCastro\ScribeTdd\Tests;
 
 use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
 use Exception;
-use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\App;
 use PHPUnit\Metadata\Annotation\Parser\Registry;
@@ -53,13 +52,12 @@ trait ScribeTddSetup
 
     private function makeExample(): void
     {
-        /** @var TestCase $this */
         $exampleCreator = new ExampleCreator([
             'test' => $this,
-            'testMethod' => $this->name(false),
+            'testMethod' => $this->name(),
             'dataName' => $this->dataName(),
             'providedData' => $this->providedData(),
-            'description' => $this->guessResponseDescription($this->name(false)),
+            'description' => $this->guessResponseDescription($this->name()),
         ]);
 
         ExampleCreator::setCurrentInstance($exampleCreator);
@@ -84,7 +82,7 @@ trait ScribeTddSetup
 
     private function shouldSkipExample(): bool
     {
-        return !is_null($this->getAnnotation($this->name(false), 'scribeSkip'));
+        return !is_null($this->getAnnotation($this->name(), 'scribeSkip'));
     }
 
     private function guessResponseDescription($testMethod)
