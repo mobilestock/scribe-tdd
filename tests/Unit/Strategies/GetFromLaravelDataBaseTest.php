@@ -212,6 +212,24 @@ describe('buildPayloadForNestedDataExpansion', function () {
         // MixedParamData has string|int $mixed_field which is ReflectionUnionType, not ReflectionNamedType
         expect($result)->toBe([]);
     });
+
+    it('skips non-existent class type hints in constructor parameters', function () {
+        // PHP allows classes with type hints to non-existent classes (lazy validation)
+        eval('
+            class DataWithNonExistentTypeHint extends Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $name,
+                    public \NonExistent\SomeClass $thing,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'DataWithNonExistentTypeHint');
+
+        // Should skip the non-existent type without throwing, not build payload for it
+        expect($result)->toBe([]);
+    });
 });
 
 describe('getRouteValidationRules', function () {

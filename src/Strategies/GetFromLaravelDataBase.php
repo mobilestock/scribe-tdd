@@ -94,6 +94,9 @@ class GetFromLaravelDataBase extends Strategy
             }
 
             $typeName = $type->getName();
+            if (!class_exists($typeName)) {
+                continue;
+            }
             $typeReflection = new ReflectionClass($typeName);
 
             if ($typeReflection->isSubclassOf(Data::class)) {
