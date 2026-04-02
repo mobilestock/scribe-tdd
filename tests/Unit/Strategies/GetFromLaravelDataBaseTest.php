@@ -297,6 +297,52 @@ describe('getRouteValidationRules', function () {
         expect($result)->toBeArray();
         expect($result)->not->toBeEmpty();
     });
+
+    it('returns empty rules when ALL builtin properties have defaults (known Spatie limitation)', function () {
+        eval('
+            class AllDefaultsData extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $name = "default",
+                    public int $quantity = 0,
+                    public ?string $notes = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
+        $result = $reflection->invoke($this->strategy, 'AllDefaultsData');
+
+        // Spatie omits properties with defaults when not present in payload.
+        // buildPayloadForNestedDataExpansion only fills nested Data keys, not builtin keys.
+        // This is a pre-existing limitation: optional builtin properties won't appear in docs.
+        expect($result)->toBe([]);
+    });
+
+    it('includes nested Data rules even when nested property has default', function () {
+        eval('
+            class InnerDefaultData extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $street = "",
+                    public string $city = "",
+                ) {}
+            }
+            class OuterWithDefaultNested extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $name,
+                    public ?InnerDefaultData $address = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
+        $result = $reflection->invoke($this->strategy, 'OuterWithDefaultNested');
+
+        expect($result)->toHaveKey('name');
+        // The payload built by buildPayloadForNestedDataExpansion should include
+        // the address key, causing Spatie to expand it
+        expect($result)->toHaveKey('address.street');
+        expect($result)->toHaveKey('address.city');
+    });
 });
 
 describe('getCustomParameterData', function () {
