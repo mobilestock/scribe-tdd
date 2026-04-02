@@ -27,22 +27,22 @@ class RouteTestResult
     public static function loadTestResults($dir)
     {
         $result = [
-            'test_class'   => '',
-            'test_method'  => '',
-            'url_params'   => [],
+            'test_class' => '',
+            'test_method' => '',
+            'url_params' => [],
             'query_params' => [],
-            'body_params'  => [],
-            'responses'    => [],
+            'body_params' => [],
+            'responses' => [],
         ];
 
         $files = File::files($dir);
         $seenStatusCodes = [];
 
-        foreach($files as $file) {
+        foreach ($files as $file) {
             $array = static::decodeFile($file->getPathname());
 
-            $result['test_class'] = isset($array['test_class']) ? $array['test_class'] : $result['test_class'];
-            $result['test_method'] = isset($array['test_method']) ? $array['test_method'] : $result['test_method'];
+            $result['test_class'] = $array['test_class'] ?? $result['test_class'];
+            $result['test_method'] = $array['test_method'] ?? $result['test_method'];
 
             $result['url_params'] = $result['url_params'] + ($array['url_params'] ?? []);
             $result['query_params'] = $result['query_params'] + ($array['query_params'] ?? []);
@@ -50,7 +50,7 @@ class RouteTestResult
 
             foreach ($array['responses'] ?? [] as $response) {
                 $statusCode = $response['status'] ?? null;
-                if (! isset($seenStatusCodes[$statusCode])) {
+                if (!isset($seenStatusCodes[$statusCode])) {
                     $result['responses'][] = $response;
                     $seenStatusCodes[$statusCode] = true;
                 }

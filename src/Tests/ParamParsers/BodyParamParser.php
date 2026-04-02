@@ -29,8 +29,8 @@ class BodyParamParser
                     $result += $processArray($value, "$prefix$key.");
                 }
             }
-        
-        return $result;
+
+            return $result;
         };
 
         return $processArray($value);

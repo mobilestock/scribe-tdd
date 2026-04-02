@@ -2,7 +2,6 @@
 
 namespace AjCastro\ScribeTdd\Tests;
 
-use AjCastro\ScribeTdd\Tests\ExampleRequest;
 use AjCastro\ScribeTdd\Tests\Traits\SetProps;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
@@ -63,12 +62,12 @@ class ExampleCreator implements Arrayable, Jsonable
         $parts = [$uri];
         $parts = array_merge($parts, $route->methods);
 
-        return implode(',',  $parts);
+        return implode(',', $parts);
     }
 
     public static function writeDir(Route $route)
     {
-        return storage_path('scribe-tdd/'.static::normalizeUriForInstanceKey($route));
+        return storage_path('scribe-tdd/' . static::normalizeUriForInstanceKey($route));
     }
 
     public static function getInstanceForRoute($route)
@@ -131,22 +130,22 @@ class ExampleCreator implements Arrayable, Jsonable
     /** @deprecated in favor of getWritables() */
     public function writePath()
     {
-        return static::writeDir($this->route).'/'.$this->id.'.json';
+        return static::writeDir($this->route) . '/' . $this->id . '.json';
     }
 
     protected function getExtra()
     {
         return [
-            'id'            => $this->id,
-            'test_class'    => $this->testClass,
-            'test_method'   => $this->testMethod,
-            'data_name'     => $this->dataName,
+            'id' => $this->id,
+            'test_class' => $this->testClass,
+            'test_method' => $this->testMethod,
+            'data_name' => $this->dataName,
             'provided_data' => $this->providedData,
-            'description'   => $this->description,
-            'key'           => $this->instanceKey(),
+            'description' => $this->description,
+            'key' => $this->instanceKey(),
             'route' => [
-                'uri'     => $this->route->uri,
-                'name'    => $this->route->getName(),
+                'uri' => $this->route->uri,
+                'name' => $this->route->getName(),
                 'methods' => $this->route->methods,
             ],
         ];
@@ -155,10 +154,10 @@ class ExampleCreator implements Arrayable, Jsonable
     public function toArray()
     {
         return $this->getExtra() + [
-            'url_params'   => $this->mergeUrlParams(),
+            'url_params' => $this->mergeUrlParams(),
             'query_params' => $this->mergeQueryParams(),
-            'body_params'  => $this->mergeBodyParams(),
-            'responses'    => $this->mergeResponses(),
+            'body_params' => $this->mergeBodyParams(),
+            'responses' => $this->mergeResponses(),
         ];
     }
 
@@ -171,7 +170,7 @@ class ExampleCreator implements Arrayable, Jsonable
     {
         $results = [];
 
-        $method = 'get'.ucfirst($type);
+        $method = 'get' . ucfirst($type);
 
         foreach ($this->exampleRequests as $request) {
             $results = $results + $request->{$method}();
