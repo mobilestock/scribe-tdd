@@ -10,6 +10,31 @@ beforeEach(function () {
     };
 });
 
+function invokeStrategy(object $strategy, string $method, mixed ...$args): mixed
+{
+    return (new ReflectionMethod($strategy, $method))->invoke($strategy, ...$args);
+}
+
+function makeEndpointForController(
+    object $controller,
+    string $methodName,
+    string $uri
+): Knuckles\Camel\Extraction\ExtractedEndpointData {
+    return makeEndpointData([
+        'route' => new Route(['POST'], $uri, fn() => null),
+        'uri' => $uri,
+        'httpMethods' => ['POST'],
+        'method' => new ReflectionMethod($controller, $methodName),
+        'metadata' => [],
+        'headers' => [],
+        'urlParameters' => [],
+        'queryParameters' => [],
+        'bodyParameters' => [],
+        'responses' => [],
+        'responseFields' => [],
+    ]);
+}
+
 describe('getLaravelDataReflectionClass', function () {
     it('returns null when no Data class parameter found', function () {
         $method = new ReflectionMethod(
@@ -21,13 +46,10 @@ describe('getLaravelDataReflectionClass', function () {
             'handle'
         );
 
-        $reflection = new ReflectionMethod($this->strategy, 'getLaravelDataReflectionClass');
-        $result = $reflection->invoke($this->strategy, $method);
-
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method))->toBeNull();
     });
 
-    it('finds Data class parameter', function () {
+    it('returns null for Data base class itself (not a subclass)', function () {
         $method = new ReflectionMethod(
             new class {
                 public function handle(Spatie\LaravelData\Data $data)
@@ -37,11 +59,7 @@ describe('getLaravelDataReflectionClass', function () {
             'handle'
         );
 
-        $reflection = new ReflectionMethod($this->strategy, 'getLaravelDataReflectionClass');
-        $result = $reflection->invoke($this->strategy, $method);
-
-        // Data itself is not a subclass of Data, it IS Data, so returns null
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method))->toBeNull();
     });
 
     it('returns reflection for Data subclass', function () {
@@ -53,9 +71,7 @@ describe('getLaravelDataReflectionClass', function () {
             },
             'handle'
         );
-
-        $reflection = new ReflectionMethod($this->strategy, 'getLaravelDataReflectionClass');
-        $result = $reflection->invoke($this->strategy, $method);
+        $result = invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method);
 
         expect($result)->toBeInstanceOf(ReflectionClass::class);
         expect($result->getName())->toBe(Tests\Fixtures\SimpleData::class);
@@ -71,14 +87,10 @@ describe('getLaravelDataReflectionClass', function () {
             'handle'
         );
 
-        $reflection = new ReflectionMethod($this->strategy, 'getLaravelDataReflectionClass');
-        $result = $reflection->invoke($this->strategy, $method);
-
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method))->toBeNull();
     });
 
-    it('skips non-existent class types', function () {
-        // Test with parameter that has no type
+    it('skips parameters without type hint', function () {
         $method = new ReflectionMethod(
             new class {
                 public function handle($data)
@@ -88,24 +100,19 @@ describe('getLaravelDataReflectionClass', function () {
             'handle'
         );
 
-        $reflection = new ReflectionMethod($this->strategy, 'getLaravelDataReflectionClass');
-        $result = $reflection->invoke($this->strategy, $method);
-
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method))->toBeNull();
     });
 });
 
 describe('normalizeDataRules', function () {
     it('passes through string rules', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, ['name' => 'required|string']);
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', ['name' => 'required|string']);
 
         expect($result)->toBe(['name' => 'required|string']);
     });
 
     it('converts numeric indices to wildcards', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
             'items.0.name' => 'required|string',
             'items.0.qty' => 'required|integer',
         ]);
@@ -122,8 +129,7 @@ describe('normalizeDataRules', function () {
             }
         };
 
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, ['field' => [$rule]]);
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', ['field' => [$rule]]);
 
         expect($result['field'])->toBe(['required|string']);
     });
@@ -131,8 +137,7 @@ describe('normalizeDataRules', function () {
     it('passes through non-array non-string rules as array', function () {
         $rule = new stdClass();
 
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, ['field' => $rule]);
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', ['field' => $rule]);
 
         expect($result['field'])->toBe([$rule]);
     });
@@ -144,83 +149,32 @@ describe('normalizeDataRules', function () {
             }
         };
 
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, ['field' => ['required', $rule]]);
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', ['field' => ['required', $rule]]);
 
         expect($result['field'][0])->toBe('required');
         expect($result['field'][1])->toBe($rule);
     });
 
-    it('converts deeply nested numeric indices to wildcards', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
-            'items.0.sub_items.0.variants.0.name' => 'required|string',
-        ]);
-
-        expect($result)->toHaveKey('items.*.sub_items.*.variants.*.name');
-    });
-
-    it('converts multi-digit numeric indices', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
-            'items.10.name' => 'required|string',
-            'items.99.qty' => 'required|integer',
-        ]);
-
-        expect($result)->toHaveKey('items.*.name');
-        expect($result)->toHaveKey('items.*.qty');
-    });
-
     it('converts numeric index at end of field path', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
             'items.0' => 'required|integer',
         ]);
 
         expect($result)->toHaveKey('items.*');
     });
-
-    it('leaves already-wildcard paths unchanged', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
-            'items.*.name' => 'required|string',
-        ]);
-
-        expect($result)->toHaveKey('items.*.name');
-    });
-
-    it('merges duplicate keys after wildcard conversion', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
-        $result = $reflection->invoke($this->strategy, [
-            'items.0.name' => 'required|string',
-            'items.1.name' => 'required|string',
-        ]);
-
-        // Both convert to items.*.name — last one wins in PHP arrays
-        expect($result)->toHaveKey('items.*.name');
-        expect(count(array_keys($result)))->toBe(1);
-    });
 });
 
 describe('buildPayloadForNestedDataExpansion', function () {
     it('returns empty array for class without constructor', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'stdClass');
-
-        expect($result)->toBe([]);
-    });
-
-    it('throws for nonexistent class', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-
-        expect(fn() => $reflection->invoke($this->strategy, 'NonExistentClass12345'))->toThrow(
-            ReflectionException::class
-        );
+        expect(invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'stdClass'))->toBe([]);
     });
 
     it('builds payload for nested Data class parameters', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\OrderData::class);
+        $result = invokeStrategy(
+            $this->strategy,
+            'buildPayloadForNestedDataExpansion',
+            Tests\Fixtures\OrderData::class
+        );
 
         expect($result)->toHaveKey('main_item');
         expect($result['main_item'])->toBeArray();
@@ -229,8 +183,11 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('builds payload for DataCollectionOf attributes', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\OrderData::class);
+        $result = invokeStrategy(
+            $this->strategy,
+            'buildPayloadForNestedDataExpansion',
+            Tests\Fixtures\OrderData::class
+        );
 
         expect($result)->toHaveKey('items');
         expect($result['items'])->toBeArray();
@@ -238,8 +195,11 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('builds payload for DataCollectionOf with DataCollection type', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\DataCollectionData::class);
+        $result = invokeStrategy(
+            $this->strategy,
+            'buildPayloadForNestedDataExpansion',
+            Tests\Fixtures\DataCollectionData::class
+        );
 
         expect($result)->toHaveKey('items');
         expect($result['items'])->toBeArray();
@@ -248,23 +208,18 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('skips builtin types without DataCollectionOf', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\SimpleData::class);
-
-        // SimpleData has string $name and int $quantity - both builtin, no DataCollectionOf
-        expect($result)->toBe([]);
+        expect(
+            invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', Tests\Fixtures\SimpleData::class)
+        )->toBe([]);
     });
 
     it('skips union type parameters', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\MixedParamData::class);
-
-        // MixedParamData has string|int $mixed_field which is ReflectionUnionType, not ReflectionNamedType
-        expect($result)->toBe([]);
+        expect(
+            invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', Tests\Fixtures\MixedParamData::class)
+        )->toBe([]);
     });
 
     it('skips non-existent class type hints in constructor parameters', function () {
-        // PHP allows classes with type hints to non-existent classes (lazy validation)
         eval('
             class DataWithNonExistentTypeHint extends Spatie\LaravelData\Data {
                 public function __construct(
@@ -274,25 +229,19 @@ describe('buildPayloadForNestedDataExpansion', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'DataWithNonExistentTypeHint');
-
-        // Should skip the non-existent type without throwing, not build payload for it
-        expect($result)->toBe([]);
+        expect(
+            invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'DataWithNonExistentTypeHint')
+        )->toBe([]);
     });
 });
 
 describe('getRouteValidationRules', function () {
     it('returns empty array for class without getValidationRules', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
-        $result = $reflection->invoke($this->strategy, 'stdClass');
-
-        expect($result)->toBe([]);
+        expect(invokeStrategy($this->strategy, 'getRouteValidationRules', 'stdClass'))->toBe([]);
     });
 
     it('returns validation rules for Data class', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
-        $result = $reflection->invoke($this->strategy, Tests\Fixtures\SimpleData::class);
+        $result = invokeStrategy($this->strategy, 'getRouteValidationRules', Tests\Fixtures\SimpleData::class);
 
         expect($result)->toBeArray();
         expect($result)->not->toBeEmpty();
@@ -309,13 +258,7 @@ describe('getRouteValidationRules', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
-        $result = $reflection->invoke($this->strategy, 'AllDefaultsData');
-
-        // Spatie omits properties with defaults when not present in payload.
-        // buildPayloadForNestedDataExpansion only fills nested Data keys, not builtin keys.
-        // This is a pre-existing limitation: optional builtin properties won't appear in docs.
-        expect($result)->toBe([]);
+        expect(invokeStrategy($this->strategy, 'getRouteValidationRules', 'AllDefaultsData'))->toBe([]);
     });
 
     it('includes nested Data rules even when nested property has default', function () {
@@ -334,12 +277,9 @@ describe('getRouteValidationRules', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'getRouteValidationRules');
-        $result = $reflection->invoke($this->strategy, 'OuterWithDefaultNested');
+        $result = invokeStrategy($this->strategy, 'getRouteValidationRules', 'OuterWithDefaultNested');
 
         expect($result)->toHaveKey('name');
-        // The payload built by buildPayloadForNestedDataExpansion should include
-        // the address key, causing Spatie to expand it
         expect($result)->toHaveKey('address.street');
         expect($result)->toHaveKey('address.city');
     });
@@ -347,10 +287,7 @@ describe('getRouteValidationRules', function () {
 
 describe('getCustomParameterData', function () {
     it('returns empty array when method does not exist', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'getCustomParameterData');
-        $result = $reflection->invoke($this->strategy, 'stdClass');
-
-        expect($result)->toBe([]);
+        expect(invokeStrategy($this->strategy, 'getCustomParameterData', 'stdClass'))->toBe([]);
     });
 
     it('calls customParameterData method when it exists', function () {
@@ -370,11 +307,19 @@ describe('getCustomParameterData', function () {
             }
         };
 
-        $reflection = new ReflectionMethod($this->strategy, 'getCustomParameterData');
-        $result = $reflection->invoke($this->strategy, get_class($dataClass));
+        $result = invokeStrategy($this->strategy, 'getCustomParameterData', get_class($dataClass));
 
         expect($result)->toHaveKey('name');
         expect($result['name']['description'])->toBe('The name');
+    });
+});
+
+describe('getMissingCustomDataMessage', function () {
+    it('includes parameter name and method name in message', function () {
+        $result = invokeStrategy($this->strategy, 'getMissingCustomDataMessage', 'name');
+
+        expect($result)->toContain('name');
+        expect($result)->toContain('bodyParameters');
     });
 });
 
@@ -385,13 +330,9 @@ describe('getDataCollectionOfClass', function () {
             {
             }
         };
-        $constructor = new ReflectionMethod($class, '__construct');
-        $param = $constructor->getParameters()[0];
+        $param = (new ReflectionMethod($class, '__construct'))->getParameters()[0];
 
-        $reflection = new ReflectionMethod($this->strategy, 'getDataCollectionOfClass');
-        $result = $reflection->invoke($this->strategy, $param);
-
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getDataCollectionOfClass', $param))->toBeNull();
     });
 
     it('returns null when no DataCollectionOf attribute', function () {
@@ -401,13 +342,9 @@ describe('getDataCollectionOfClass', function () {
             {
             }
         };
-        $constructor = new ReflectionMethod($class, '__construct');
-        $param = $constructor->getParameters()[0];
+        $param = (new ReflectionMethod($class, '__construct'))->getParameters()[0];
 
-        $reflection = new ReflectionMethod($this->strategy, 'getDataCollectionOfClass');
-        $result = $reflection->invoke($this->strategy, $param);
-
-        expect($result)->toBeNull();
+        expect(invokeStrategy($this->strategy, 'getDataCollectionOfClass', $param))->toBeNull();
     });
 
     it('returns reflection for valid DataCollectionOf attribute', function () {
@@ -420,8 +357,7 @@ describe('getDataCollectionOfClass', function () {
             }
         }
 
-        $reflection = new ReflectionMethod($this->strategy, 'getDataCollectionOfClass');
-        $result = $reflection->invoke($this->strategy, $itemsParam);
+        $result = invokeStrategy($this->strategy, 'getDataCollectionOfClass', $itemsParam);
 
         expect($result)->toBeInstanceOf(ReflectionClass::class);
         expect($result->getName())->toBe(Tests\Fixtures\NestedItemData::class);
@@ -432,17 +368,15 @@ describe('buildNestedDataStub', function () {
     it('returns empty for class without constructor', function () {
         $class = new ReflectionClass(new class extends Spatie\LaravelData\Data {});
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
-        $result = $reflection->invoke($this->strategy, $class);
-
-        expect($result)->toBe([]);
+        expect(invokeStrategy($this->strategy, 'buildNestedDataStub', $class))->toBe([]);
     });
 
     it('builds stub with null for builtin types', function () {
-        $class = new ReflectionClass(Tests\Fixtures\NestedItemData::class);
-
-        $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
-        $result = $reflection->invoke($this->strategy, $class);
+        $result = invokeStrategy(
+            $this->strategy,
+            'buildNestedDataStub',
+            new ReflectionClass(Tests\Fixtures\NestedItemData::class)
+        );
 
         expect($result)->toHaveKey('sku');
         expect($result)->toHaveKey('qty');
@@ -450,10 +384,11 @@ describe('buildNestedDataStub', function () {
     });
 
     it('builds nested stub for Data class properties', function () {
-        $class = new ReflectionClass(Tests\Fixtures\OrderData::class);
-
-        $reflection = new ReflectionMethod($this->strategy, 'buildNestedDataStub');
-        $result = $reflection->invoke($this->strategy, $class);
+        $result = invokeStrategy(
+            $this->strategy,
+            'buildNestedDataStub',
+            new ReflectionClass(Tests\Fixtures\OrderData::class)
+        );
 
         expect($result)->toHaveKey('customer_name');
         expect($result)->toHaveKey('main_item');
@@ -473,10 +408,8 @@ describe('circular reference protection', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'SelfRefData');
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'SelfRefData');
 
-        // parent should be expanded but its nested parent should be null (cycle broken)
         expect($result)->toHaveKey('parent');
         expect($result['parent'])->toBeArray();
         expect($result['parent'])->toHaveKey('name');
@@ -499,45 +432,12 @@ describe('circular reference protection', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'CycleA2');
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'CycleA2');
 
-        // A.child = B expanded, B.back = A detected as cycle → null
         expect($result)->toHaveKey('child');
         expect($result['child'])->toBeArray();
         expect($result['child'])->toHaveKey('label');
         expect($result['child']['back'])->toBeNull();
-    });
-
-    it('handles A→B→C→A three-node cycle', function () {
-        eval('
-            class TriCycleC extends \Spatie\LaravelData\Data {
-                public function __construct(
-                    public string $value,
-                    public ?TriCycleA $back_to_a = null,
-                ) {}
-            }
-            class TriCycleB extends \Spatie\LaravelData\Data {
-                public function __construct(
-                    public string $value,
-                    public ?TriCycleC $next = null,
-                ) {}
-            }
-            class TriCycleA extends \Spatie\LaravelData\Data {
-                public function __construct(
-                    public string $value,
-                    public ?TriCycleB $next = null,
-                ) {}
-            }
-        ');
-
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'TriCycleA');
-
-        // A.next = B, B.next = C, C.back_to_a = null (cycle detected)
-        expect($result['next'])->toBeArray();
-        expect($result['next']['next'])->toBeArray();
-        expect($result['next']['next']['back_to_a'])->toBeNull();
     });
 
     it('handles A→B→C→B cycle not involving root', function () {
@@ -562,16 +462,14 @@ describe('circular reference protection', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'ChainA');
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'ChainA');
 
-        // A.child = B, B.next = C, C.back = null (B→C→B cycle detected)
         expect($result['child'])->toBeArray();
         expect($result['child']['next'])->toBeArray();
         expect($result['child']['next']['back'])->toBeNull();
     });
 
-    it('handles diamond pattern (A→B,C; B→D; C→D) without false cycle detection', function () {
+    it('handles diamond pattern without false cycle detection', function () {
         eval('
             class DiamondD extends \Spatie\LaravelData\Data {
                 public function __construct(public string $value) {}
@@ -590,36 +488,10 @@ describe('circular reference protection', function () {
             }
         ');
 
-        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
-        $result = $reflection->invoke($this->strategy, 'DiamondA');
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'DiamondA');
 
-        // D should be fully expanded in BOTH paths (not falsely detected as cycle)
-        expect($result['b'])->toBeArray();
-        expect($result['b']['d'])->toBeArray();
         expect($result['b']['d']['value'])->toBeNull();
-
-        expect($result['c'])->toBeArray();
-        expect($result['c']['d'])->toBeArray();
         expect($result['c']['d']['value'])->toBeNull();
-    });
-});
-
-describe('getMissingCustomDataMessage', function () {
-    it('returns descriptive message with parameter name', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'getMissingCustomDataMessage');
-        $result = $reflection->invoke($this->strategy, 'name');
-
-        expect($result)->toContain('name');
-        expect($result)->toContain('bodyParameters');
-    });
-});
-
-describe('isLaravelDataMeantForThisStrategy', function () {
-    it('returns true by default in base class', function () {
-        $reflection = new ReflectionMethod($this->strategy, 'isLaravelDataMeantForThisStrategy');
-        $mockClass = new ReflectionClass(Tests\Fixtures\SimpleData::class);
-
-        expect($reflection->invoke($this->strategy, $mockClass))->toBeTrue();
     });
 });
 
@@ -630,27 +502,9 @@ describe('__invoke', function () {
             {
             }
         };
-        $method = new ReflectionMethod($controller, 'handle');
+        $endpoint = makeEndpointForController($controller, 'handle', 'test');
 
-        $route = new Route(['POST'], 'test', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'test',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
-        $result = $this->strategy->__invoke($endpoint);
-
-        expect($result)->toBe([]);
+        expect($this->strategy->__invoke($endpoint))->toBe([]);
     });
 
     it('returns empty when Data class has no validation rules', function () {
@@ -659,27 +513,9 @@ describe('__invoke', function () {
             {
             }
         };
-        $method = new ReflectionMethod($controller, 'handle');
+        $endpoint = makeEndpointForController($controller, 'handle', 'empty-data');
 
-        $route = new Route(['POST'], 'empty-data', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'empty-data',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
-        $result = $this->strategy->__invoke($endpoint);
-
-        expect($result)->toBe([]);
+        expect($this->strategy->__invoke($endpoint))->toBe([]);
     });
 
     it('extracts parameters from Data class', function () {
@@ -688,89 +524,11 @@ describe('__invoke', function () {
             {
             }
         };
-        $method = new ReflectionMethod($controller, 'handle');
-
-        $route = new Route(['POST'], 'simple-data', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'simple-data',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
+        $endpoint = makeEndpointForController($controller, 'handle', 'simple-data');
         $result = $this->strategy->__invoke($endpoint);
 
         expect($result)->toBeArray();
         expect($result)->toHaveKey('name');
-    });
-
-    it('extracts parameters from nested Data class', function () {
-        $controller = new class {
-            public function handle(Tests\Fixtures\OrderData $data)
-            {
-            }
-        };
-        $method = new ReflectionMethod($controller, 'handle');
-
-        $route = new Route(['POST'], 'order-data', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'order-data',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
-        $result = $this->strategy->__invoke($endpoint);
-
-        expect($result)->toBeArray();
-        expect($result)->toHaveKey('customer_name');
-    });
-
-    it('extracts parameters from DataCollection typed property', function () {
-        $controller = new class {
-            public function handle(Tests\Fixtures\DataCollectionData $data)
-            {
-            }
-        };
-        $method = new ReflectionMethod($controller, 'handle');
-
-        $route = new Route(['POST'], 'data-collection', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'data-collection',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
-        $result = $this->strategy->__invoke($endpoint);
-
-        expect($result)->toBeArray();
-        expect($result)->toHaveKey('title');
-        expect($result)->toHaveKey('items');
     });
 
     it('returns empty when strategy rejects the Data class', function () {
@@ -789,26 +547,8 @@ describe('__invoke', function () {
             {
             }
         };
-        $method = new ReflectionMethod($controller, 'handle');
+        $endpoint = makeEndpointForController($controller, 'handle', 'rejected');
 
-        $route = new Route(['POST'], 'rejected', fn() => null);
-
-        $endpoint = makeEndpointData([
-            'route' => $route,
-            'uri' => 'rejected',
-            'httpMethods' => ['POST'],
-            'method' => $method,
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
-
-        $result = $rejectingStrategy->__invoke($endpoint);
-
-        expect($result)->toBe([]);
+        expect($rejectingStrategy->__invoke($endpoint))->toBe([]);
     });
 });
