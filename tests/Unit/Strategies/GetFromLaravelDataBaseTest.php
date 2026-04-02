@@ -366,6 +366,148 @@ describe('buildNestedDataStub', function () {
     });
 });
 
+describe('circular reference protection', function () {
+    it('handles self-reference (A→A)', function () {
+        eval('
+            class SelfRefData extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $name,
+                    public ?SelfRefData $parent = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'SelfRefData');
+
+        // parent should be expanded but its nested parent should be null (cycle broken)
+        expect($result)->toHaveKey('parent');
+        expect($result['parent'])->toBeArray();
+        expect($result['parent'])->toHaveKey('name');
+        expect($result['parent']['parent'])->toBeNull();
+    });
+
+    it('handles A→B→A cycle', function () {
+        eval('
+            class CycleB2 extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $label,
+                    public ?CycleA2 $back = null,
+                ) {}
+            }
+            class CycleA2 extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $name,
+                    public ?CycleB2 $child = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'CycleA2');
+
+        // A.child = B expanded, B.back = A detected as cycle → null
+        expect($result)->toHaveKey('child');
+        expect($result['child'])->toBeArray();
+        expect($result['child'])->toHaveKey('label');
+        expect($result['child']['back'])->toBeNull();
+    });
+
+    it('handles A→B→C→A three-node cycle', function () {
+        eval('
+            class TriCycleC extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?TriCycleA $back_to_a = null,
+                ) {}
+            }
+            class TriCycleB extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?TriCycleC $next = null,
+                ) {}
+            }
+            class TriCycleA extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?TriCycleB $next = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'TriCycleA');
+
+        // A.next = B, B.next = C, C.back_to_a = null (cycle detected)
+        expect($result['next'])->toBeArray();
+        expect($result['next']['next'])->toBeArray();
+        expect($result['next']['next']['back_to_a'])->toBeNull();
+    });
+
+    it('handles A→B→C→B cycle not involving root', function () {
+        eval('
+            class ChainC extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?ChainB2 $back = null,
+                ) {}
+            }
+            class ChainB2 extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?ChainC $next = null,
+                ) {}
+            }
+            class ChainA extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public string $value,
+                    public ?ChainB2 $child = null,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'ChainA');
+
+        // A.child = B, B.next = C, C.back = null (B→C→B cycle detected)
+        expect($result['child'])->toBeArray();
+        expect($result['child']['next'])->toBeArray();
+        expect($result['child']['next']['back'])->toBeNull();
+    });
+
+    it('handles diamond pattern (A→B,C; B→D; C→D) without false cycle detection', function () {
+        eval('
+            class DiamondD extends \Spatie\LaravelData\Data {
+                public function __construct(public string $value) {}
+            }
+            class DiamondB extends \Spatie\LaravelData\Data {
+                public function __construct(public DiamondD $d) {}
+            }
+            class DiamondC extends \Spatie\LaravelData\Data {
+                public function __construct(public DiamondD $d) {}
+            }
+            class DiamondA extends \Spatie\LaravelData\Data {
+                public function __construct(
+                    public DiamondB $b,
+                    public DiamondC $c,
+                ) {}
+            }
+        ');
+
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, 'DiamondA');
+
+        // D should be fully expanded in BOTH paths (not falsely detected as cycle)
+        expect($result['b'])->toBeArray();
+        expect($result['b']['d'])->toBeArray();
+        expect($result['b']['d']['value'])->toBeNull();
+
+        expect($result['c'])->toBeArray();
+        expect($result['c']['d'])->toBeArray();
+        expect($result['c']['d']['value'])->toBeNull();
+    });
+});
+
 describe('getMissingCustomDataMessage', function () {
     it('returns descriptive message with parameter name', function () {
         $reflection = new ReflectionMethod($this->strategy, 'getMissingCustomDataMessage');
