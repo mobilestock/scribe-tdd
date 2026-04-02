@@ -60,7 +60,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
     {
         $responses = parent::generateEndpointResponsesSpec($endpoint);
 
-        $opId = $this->operationId($endpoint);
+        $operationId = $this->operationId($endpoint);
 
         foreach ($responses as $code => &$responseSpec) {
             if (!isset($responseSpec['content'])) {
@@ -71,7 +71,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
 
             foreach ($responseSpec['content'] as &$mediaType) {
                 if (isset($mediaType['schema']) && is_array($mediaType['schema'])) {
-                    $mediaType['schema']['title'] = $opId . $phrase;
+                    $mediaType['schema']['title'] = $operationId . $phrase;
                 }
             }
             unset($mediaType);
@@ -124,7 +124,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
 
     protected function operationIdFromUri(OutputEndpointData $endpoint): string
     {
-        $method = strtolower($endpoint->httpMethods[0] ?? 'get');
+        $method = mb_strtolower($endpoint->httpMethods[0] ?? 'get');
         $segments = array_filter(explode('/', $endpoint->uri));
 
         // Remove path parameter placeholders like {id}

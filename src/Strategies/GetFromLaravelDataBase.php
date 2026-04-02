@@ -10,6 +10,7 @@ use Knuckles\Scribe\Tools\ConsoleOutputUtils;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
+use ReflectionParameter;
 use ReflectionUnionType;
 use Spatie\LaravelData\Attributes\DataCollectionOf;
 use Spatie\LaravelData\Data;
@@ -152,7 +153,7 @@ class GetFromLaravelDataBase extends Strategy
         return $stub;
     }
 
-    protected function getDataCollectionOfClass(\ReflectionParameter $param): ?ReflectionClass
+    protected function getDataCollectionOfClass(ReflectionParameter $param): ?ReflectionClass
     {
         /** @var \ReflectionMethod $declaringFunction */
         $declaringFunction = $param->getDeclaringFunction();
