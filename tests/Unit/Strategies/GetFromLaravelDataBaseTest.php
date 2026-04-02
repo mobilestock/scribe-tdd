@@ -150,6 +150,56 @@ describe('normalizeDataRules', function () {
         expect($result['field'][0])->toBe('required');
         expect($result['field'][1])->toBe($rule);
     });
+
+    it('converts deeply nested numeric indices to wildcards', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
+        $result = $reflection->invoke($this->strategy, [
+            'items.0.sub_items.0.variants.0.name' => 'required|string',
+        ]);
+
+        expect($result)->toHaveKey('items.*.sub_items.*.variants.*.name');
+    });
+
+    it('converts multi-digit numeric indices', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
+        $result = $reflection->invoke($this->strategy, [
+            'items.10.name' => 'required|string',
+            'items.99.qty' => 'required|integer',
+        ]);
+
+        expect($result)->toHaveKey('items.*.name');
+        expect($result)->toHaveKey('items.*.qty');
+    });
+
+    it('converts numeric index at end of field path', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
+        $result = $reflection->invoke($this->strategy, [
+            'items.0' => 'required|integer',
+        ]);
+
+        expect($result)->toHaveKey('items.*');
+    });
+
+    it('leaves already-wildcard paths unchanged', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
+        $result = $reflection->invoke($this->strategy, [
+            'items.*.name' => 'required|string',
+        ]);
+
+        expect($result)->toHaveKey('items.*.name');
+    });
+
+    it('merges duplicate keys after wildcard conversion', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'normalizeDataRules');
+        $result = $reflection->invoke($this->strategy, [
+            'items.0.name' => 'required|string',
+            'items.1.name' => 'required|string',
+        ]);
+
+        // Both convert to items.*.name — last one wins in PHP arrays
+        expect($result)->toHaveKey('items.*.name');
+        expect(count(array_keys($result)))->toBe(1);
+    });
 });
 
 describe('buildPayloadForNestedDataExpansion', function () {
