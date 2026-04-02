@@ -99,6 +99,12 @@ class GetFromLaravelDataBase extends Strategy
             if ($typeReflection->isSubclassOf(Data::class)) {
                 $visited = [$className => true, $typeName => true];
                 $payload[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, $visited);
+            } else {
+                $collectionOf = $this->getDataCollectionOfClass($param);
+                if ($collectionOf) {
+                    $visited = [$className => true, $collectionOf->getName() => true];
+                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, $visited)];
+                }
             }
         }
 

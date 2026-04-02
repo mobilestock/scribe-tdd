@@ -187,6 +187,16 @@ describe('buildPayloadForNestedDataExpansion', function () {
         expect($result['items'][0])->toHaveKey('sku');
     });
 
+    it('builds payload for DataCollectionOf with DataCollection type', function () {
+        $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
+        $result = $reflection->invoke($this->strategy, Tests\Fixtures\DataCollectionData::class);
+
+        expect($result)->toHaveKey('items');
+        expect($result['items'])->toBeArray();
+        expect($result['items'][0])->toHaveKey('sku');
+        expect($result['items'][0])->toHaveKey('qty');
+    });
+
     it('skips builtin types without DataCollectionOf', function () {
         $reflection = new ReflectionMethod($this->strategy, 'buildPayloadForNestedDataExpansion');
         $result = $reflection->invoke($this->strategy, Tests\Fixtures\SimpleData::class);
@@ -474,6 +484,37 @@ describe('__invoke', function () {
 
         expect($result)->toBeArray();
         expect($result)->toHaveKey('customer_name');
+    });
+
+    it('extracts parameters from DataCollection typed property', function () {
+        $controller = new class {
+            public function handle(Tests\Fixtures\DataCollectionData $data)
+            {
+            }
+        };
+        $method = new ReflectionMethod($controller, 'handle');
+
+        $route = new Route(['POST'], 'data-collection', fn() => null);
+
+        $endpoint = makeEndpointData([
+            'route' => $route,
+            'uri' => 'data-collection',
+            'httpMethods' => ['POST'],
+            'method' => $method,
+            'metadata' => [],
+            'headers' => [],
+            'urlParameters' => [],
+            'queryParameters' => [],
+            'bodyParameters' => [],
+            'responses' => [],
+            'responseFields' => [],
+        ]);
+
+        $result = $this->strategy->__invoke($endpoint);
+
+        expect($result)->toBeArray();
+        expect($result)->toHaveKey('title');
+        expect($result)->toHaveKey('items');
     });
 
     it('returns empty when strategy rejects the Data class', function () {
