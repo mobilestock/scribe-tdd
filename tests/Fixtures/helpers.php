@@ -42,6 +42,20 @@ function resetRouteTestResultCache(): void
 
 function makeEndpointData(array $params): ExtractedEndpointData
 {
+    $base = [
+        'route' => null,
+        'uri' => '',
+        'httpMethods' => [],
+        'method' => null,
+        'metadata' => [],
+        'headers' => [],
+        'urlParameters' => [],
+        'queryParameters' => [],
+        'bodyParameters' => [],
+        'responses' => [],
+        'responseFields' => [],
+    ];
+    $params = array_merge($base, $params);
     $params['metadata'] = new Metadata($params['metadata'] ?? []);
     $params['responses'] = new ResponseCollection($params['responses'] ?? []);
 

@@ -27,13 +27,6 @@ it('returns empty array when no test result exists', function () {
         'uri' => 'no-result',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);
@@ -54,13 +47,6 @@ it('returns pagination params when usesPagination tag present', function () {
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);
@@ -85,13 +71,6 @@ it('returns empty when no usesPagination tag', function () {
         'uri' => 'items',
         'httpMethods' => ['POST'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);

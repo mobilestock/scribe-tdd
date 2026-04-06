@@ -28,13 +28,6 @@ it('returns empty array when no test result exists', function () {
         'uri' => 'no-result',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);
@@ -55,13 +48,6 @@ it('extracts response tag from docblock when test result exists', function () {
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);

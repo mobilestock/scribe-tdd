@@ -12,23 +12,14 @@ beforeEach(function () {
 function makeEndpoint(string $uri, array $httpMethods, $route)
 {
     $controller = new class {
-        public function handle() { return 'ok'; }
+        public function handle()
+        {
+            return 'ok';
+        }
     };
     $method = new ReflectionMethod($controller, 'handle');
 
-    return makeEndpointData([
-        'route' => $route,
-        'uri' => $uri,
-        'httpMethods' => $httpMethods,
-        'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
-    ]);
+    return makeEndpointData(['route' => $route, 'uri' => $uri, 'httpMethods' => $httpMethods, 'method' => $method]);
 }
 
 function makeClosureEndpoint(string $uri, array $httpMethods, $route, Closure $closure)
@@ -37,27 +28,18 @@ function makeClosureEndpoint(string $uri, array $httpMethods, $route, Closure $c
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => $httpMethods,
-        'method' => new \ReflectionFunction($closure),
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
+        'method' => new ReflectionFunction($closure),
     ]);
 }
 
 function findRoute(string $method, string $uri)
 {
-    return Route::getRoutes()->match(
-        \Illuminate\Http\Request::create($uri, $method)
-    );
+    return Route::getRoutes()->match(Illuminate\Http\Request::create($uri, $method));
 }
 
 it('uses route prefix as group name', function () {
     Route::prefix('orders')->group(function () {
-        Route::get('/', fn () => 'ok');
+        Route::get('/', fn() => 'ok');
     });
 
     $route = findRoute('GET', '/orders');
@@ -69,7 +51,7 @@ it('uses route prefix as group name', function () {
 });
 
 it('falls back to first URI segment when no prefix', function () {
-    Route::get('/my-test-route', fn () => 'ok');
+    Route::get('/my-test-route', fn() => 'ok');
 
     $route = findRoute('GET', '/my-test-route');
     $endpointData = makeEndpoint('my-test-route', ['GET'], $route);
@@ -80,7 +62,7 @@ it('falls back to first URI segment when no prefix', function () {
 });
 
 it('detects authenticated routes with auth middleware', function () {
-    Route::middleware(\Illuminate\Auth\Middleware\Authenticate::class)->get('/auth-test', fn () => 'ok');
+    Route::middleware(Illuminate\Auth\Middleware\Authenticate::class)->get('/auth-test', fn() => 'ok');
 
     $route = findRoute('GET', '/auth-test');
     $endpointData = makeEndpoint('auth-test', ['GET'], $route);
@@ -91,7 +73,7 @@ it('detects authenticated routes with auth middleware', function () {
 });
 
 it('marks unauthenticated routes correctly', function () {
-    Route::get('/no-auth-test', fn () => 'ok');
+    Route::get('/no-auth-test', fn() => 'ok');
 
     $route = findRoute('GET', '/no-auth-test');
     $endpointData = makeEndpoint('no-auth-test', ['GET'], $route);
@@ -104,7 +86,7 @@ it('marks unauthenticated routes correctly', function () {
 it('generates title from URI in production', function () {
     Config::set('app.url', 'https://api.example.com');
 
-    Route::get('/users/my-list', fn () => 'ok');
+    Route::get('/users/my-list', fn() => 'ok');
 
     $route = findRoute('GET', '/users/my-list');
     $endpointData = makeEndpoint('users/my-list', ['GET'], $route);
@@ -116,7 +98,7 @@ it('generates title from URI in production', function () {
 
 it('uses second prefix segment as subgroup', function () {
     Route::prefix('api/v2')->group(function () {
-        Route::get('/my-items', fn () => 'ok');
+        Route::get('/my-items', fn() => 'ok');
     });
 
     $route = findRoute('GET', '/api/v2/my-items');
@@ -132,7 +114,9 @@ it('generates file link for closure routes pointing to route file', function () 
     Config::set('app.url', 'http://localhost');
     putenv('ROOT_DIR=/test/root');
 
-    $closure = function () { return 'ok'; };
+    $closure = function () {
+        return 'ok';
+    };
     Route::get('/closure-link-test', $closure);
 
     $route = findRoute('GET', '/closure-link-test');
@@ -140,18 +124,20 @@ it('generates file link for closure routes pointing to route file', function () 
 
     $result = $this->strategy->__invoke($endpointData);
 
-    $reflection = new \ReflectionFunction($closure);
+    $reflection = new ReflectionFunction($closure);
     $expectedFile = $reflection->getFileName();
     $expectedLine = $reflection->getStartLine();
     $expectedBaseName = basename($expectedFile);
 
-    expect($result['title'])->toBe("[$expectedBaseName:$expectedLine](file:///test/root/apps$expectedFile#L$expectedLine)");
+    expect($result['title'])->toBe(
+        "[$expectedBaseName:$expectedLine](file:///test/root/apps$expectedFile#L$expectedLine)"
+    );
 
     putenv('ROOT_DIR');
 });
 
 it('returns all expected metadata keys', function () {
-    Route::get('/meta-test', fn () => 'ok');
+    Route::get('/meta-test', fn() => 'ok');
 
     $route = findRoute('GET', '/meta-test');
     $endpointData = makeEndpoint('meta-test', ['GET'], $route);

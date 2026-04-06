@@ -27,13 +27,6 @@ it('returns empty array when no test result exists', function () {
         'uri' => 'no-result',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);
@@ -54,13 +47,6 @@ it('returns empty when no responseFile tag in docblock', function () {
         'uri' => 'items/{id}',
         'httpMethods' => ['GET'],
         'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 
     $result = $this->strategy->__invoke($endpoint);

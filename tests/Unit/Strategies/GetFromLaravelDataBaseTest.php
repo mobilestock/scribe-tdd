@@ -25,13 +25,6 @@ function makeEndpointForController(
         'uri' => $uri,
         'httpMethods' => ['POST'],
         'method' => new ReflectionMethod($controller, $methodName),
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
     ]);
 }
 
