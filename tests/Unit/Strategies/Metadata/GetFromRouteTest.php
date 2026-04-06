@@ -10,7 +10,8 @@ use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
-    $this->strategy = new GetFromRoute(new DocumentationConfig(config('scribe') ?? []));
+    $documentationConfig = new DocumentationConfig(config('scribe') ?? []);
+    $this->strategy = new GetFromRoute($documentationConfig);
 });
 
 function makeEndpoint(string $uri, array $httpMethods, RoutingRoute $route): ExtractedEndpointData

@@ -1,9 +1,17 @@
 <?php
 
 use AjCastro\ScribeTdd\Strategies\GetFromLaravelDataBase;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Illuminate\Routing\Route;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
+use Spatie\LaravelData\Data;
+use Tests\Fixtures\DataCollectionData;
+use Tests\Fixtures\EmptyData;
+use Tests\Fixtures\MixedParamData;
+use Tests\Fixtures\NestedItemData;
+use Tests\Fixtures\OrderData;
+use Tests\Fixtures\SimpleData;
 
 beforeEach(function () {
     $this->strategy = new class (new DocumentationConfig(config('scribe') ?? [])) extends GetFromLaravelDataBase {
@@ -34,7 +42,7 @@ describe('getLaravelDataReflectionClass', function () {
     it('returns null when no Data class parameter found', function () {
         $method = new ReflectionMethod(
             new class {
-                public function handle(string $name)
+                public function handle()
                 {
                 }
             },
@@ -49,7 +57,7 @@ describe('getLaravelDataReflectionClass', function () {
     it('returns null for Data base class itself (not a subclass)', function () {
         $method = new ReflectionMethod(
             new class {
-                public function handle(Spatie\LaravelData\Data $data)
+                public function handle()
                 {
                 }
             },
@@ -64,7 +72,7 @@ describe('getLaravelDataReflectionClass', function () {
     it('returns reflection for Data subclass', function () {
         $method = new ReflectionMethod(
             new class {
-                public function handle(Tests\Fixtures\SimpleData $data)
+                public function handle(SimpleData $data)
                 {
                 }
             },
@@ -73,13 +81,13 @@ describe('getLaravelDataReflectionClass', function () {
         $result = invokeStrategy($this->strategy, 'getLaravelDataReflectionClass', $method);
 
         expect($result)->toBeInstanceOf(ReflectionClass::class);
-        expect($result->getName())->toBe(Tests\Fixtures\SimpleData::class);
+        expect($result->getName())->toBe(SimpleData::class);
     });
 
     it('skips union type parameters', function () {
         $method = new ReflectionMethod(
             new class {
-                public function handle(string|int $data)
+                public function handle()
                 {
                 }
             },
@@ -146,7 +154,7 @@ describe('normalizeDataRules', function () {
     });
 
     it('passes through Laravel Rule objects in arrays', function () {
-        $rule = new class implements Illuminate\Contracts\Validation\ValidationRule {
+        $rule = new class implements ValidationRule {
             public function validate(string $attribute, mixed $value, Closure $fail): void
             {
             }
@@ -175,11 +183,7 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('builds payload for nested Data class parameters', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildPayloadForNestedDataExpansion',
-            Tests\Fixtures\OrderData::class
-        );
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', OrderData::class);
 
         expect($result)->toHaveKey('main_item');
         expect($result['main_item'])->toBeArray();
@@ -188,11 +192,7 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('builds payload for DataCollectionOf attributes', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildPayloadForNestedDataExpansion',
-            Tests\Fixtures\OrderData::class
-        );
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', OrderData::class);
 
         expect($result)->toHaveKey('items');
         expect($result['items'])->toBeArray();
@@ -200,11 +200,7 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('builds payload for DataCollectionOf with DataCollection type', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildPayloadForNestedDataExpansion',
-            Tests\Fixtures\DataCollectionData::class
-        );
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', DataCollectionData::class);
 
         expect($result)->toHaveKey('items');
         expect($result['items'])->toBeArray();
@@ -213,21 +209,13 @@ describe('buildPayloadForNestedDataExpansion', function () {
     });
 
     it('skips builtin types without DataCollectionOf', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildPayloadForNestedDataExpansion',
-            Tests\Fixtures\SimpleData::class
-        );
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', SimpleData::class);
 
         expect($result)->toBe([]);
     });
 
     it('skips union type parameters', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildPayloadForNestedDataExpansion',
-            Tests\Fixtures\MixedParamData::class
-        );
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', MixedParamData::class);
 
         expect($result)->toBe([]);
     });
@@ -256,7 +244,7 @@ describe('getRouteValidationRules', function () {
     });
 
     it('returns validation rules for Data class', function () {
-        $result = invokeStrategy($this->strategy, 'getRouteValidationRules', Tests\Fixtures\SimpleData::class);
+        $result = invokeStrategy($this->strategy, 'getRouteValidationRules', SimpleData::class);
 
         expect($result)->toBeArray();
         expect($result)->not->toBeEmpty();
@@ -310,7 +298,7 @@ describe('getCustomParameterData', function () {
     });
 
     it('calls customParameterData method when it exists', function () {
-        $dataClass = new class extends Spatie\LaravelData\Data {
+        $dataClass = new class extends Data {
             public function __construct(public string $name = '')
             {
             }
@@ -371,7 +359,7 @@ describe('getDataCollectionOfClass', function () {
     });
 
     it('returns reflection for valid DataCollectionOf attribute', function () {
-        $constructor = new ReflectionMethod(Tests\Fixtures\OrderData::class, '__construct');
+        $constructor = new ReflectionMethod(OrderData::class, '__construct');
         $itemsParam = null;
         foreach ($constructor->getParameters() as $param) {
             if ($param->getName() === 'items') {
@@ -383,13 +371,13 @@ describe('getDataCollectionOfClass', function () {
         $result = invokeStrategy($this->strategy, 'getDataCollectionOfClass', $itemsParam);
 
         expect($result)->toBeInstanceOf(ReflectionClass::class);
-        expect($result->getName())->toBe(Tests\Fixtures\NestedItemData::class);
+        expect($result->getName())->toBe(NestedItemData::class);
     });
 });
 
 describe('buildNestedDataStub', function () {
     it('returns empty for class without constructor', function () {
-        $class = new ReflectionClass(new class extends Spatie\LaravelData\Data {});
+        $class = new ReflectionClass(new class extends Data {});
 
         $result = invokeStrategy($this->strategy, 'buildNestedDataStub', $class);
 
@@ -397,11 +385,7 @@ describe('buildNestedDataStub', function () {
     });
 
     it('builds stub with null for builtin types', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildNestedDataStub',
-            new ReflectionClass(Tests\Fixtures\NestedItemData::class)
-        );
+        $result = invokeStrategy($this->strategy, 'buildNestedDataStub', new ReflectionClass(NestedItemData::class));
 
         expect($result)->toHaveKey('sku');
         expect($result)->toHaveKey('qty');
@@ -409,11 +393,7 @@ describe('buildNestedDataStub', function () {
     });
 
     it('builds nested stub for Data class properties', function () {
-        $result = invokeStrategy(
-            $this->strategy,
-            'buildNestedDataStub',
-            new ReflectionClass(Tests\Fixtures\OrderData::class)
-        );
+        $result = invokeStrategy($this->strategy, 'buildNestedDataStub', new ReflectionClass(OrderData::class));
 
         expect($result)->toHaveKey('customer_name');
         expect($result)->toHaveKey('main_item');
@@ -536,7 +516,7 @@ describe('__invoke', function () {
 
     it('returns empty when Data class has no validation rules', function () {
         $controller = new class {
-            public function handle(Tests\Fixtures\EmptyData $data)
+            public function handle(EmptyData $data)
             {
             }
         };
@@ -549,7 +529,7 @@ describe('__invoke', function () {
 
     it('extracts parameters from Data class', function () {
         $controller = new class {
-            public function handle(Tests\Fixtures\SimpleData $data)
+            public function handle(SimpleData $data)
             {
             }
         };
@@ -572,7 +552,7 @@ describe('__invoke', function () {
         };
 
         $controller = new class {
-            public function handle(Tests\Fixtures\SimpleData $data)
+            public function handle(SimpleData $data)
             {
             }
         };
