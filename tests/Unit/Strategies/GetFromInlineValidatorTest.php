@@ -50,5 +50,7 @@ it('validates route method correctly', function (string $class, array $httpMetho
     $reflection = new ReflectionMethod($strategy, 'isValidationStatementMeantForThisStrategy');
     $node = Mockery::mock(PhpParser\Node::class);
 
-    expect($reflection->invoke($strategy, $node))->toBe($expected);
+    $result = $reflection->invoke($strategy, $node);
+
+    expect($result)->toBe($expected);
 })->with('inlineValidatorStrategies');

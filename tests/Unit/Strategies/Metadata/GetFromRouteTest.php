@@ -1,15 +1,19 @@
 <?php
 
 use AjCastro\ScribeTdd\Strategies\Metadata\GetFromRoute;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Http\Request;
+use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Route;
+use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
 beforeEach(function () {
     $this->strategy = new GetFromRoute(new DocumentationConfig(config('scribe') ?? []));
 });
 
-function makeEndpoint(string $uri, array $httpMethods, $route)
+function makeEndpoint(string $uri, array $httpMethods, RoutingRoute $route): ExtractedEndpointData
 {
     $controller = new class {
         public function handle()
@@ -19,22 +23,37 @@ function makeEndpoint(string $uri, array $httpMethods, $route)
     };
     $method = new ReflectionMethod($controller, 'handle');
 
-    return makeEndpointData(['route' => $route, 'uri' => $uri, 'httpMethods' => $httpMethods, 'method' => $method]);
+    $endpoint = makeEndpointData([
+        'route' => $route,
+        'uri' => $uri,
+        'httpMethods' => $httpMethods,
+        'method' => $method,
+    ]);
+
+    return $endpoint;
 }
 
-function makeClosureEndpoint(string $uri, array $httpMethods, $route, Closure $closure)
-{
-    return makeEndpointData([
+function makeClosureEndpoint(
+    string $uri,
+    array $httpMethods,
+    RoutingRoute $route,
+    Closure $closure
+): ExtractedEndpointData {
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => $httpMethods,
         'method' => new ReflectionFunction($closure),
     ]);
+
+    return $endpoint;
 }
 
-function findRoute(string $method, string $uri)
+function findRoute(string $method, string $uri): RoutingRoute
 {
-    return Route::getRoutes()->match(Illuminate\Http\Request::create($uri, $method));
+    $route = Route::getRoutes()->match(Request::create($uri, $method));
+
+    return $route;
 }
 
 it('uses route prefix as group name', function () {
@@ -62,7 +81,7 @@ it('falls back to first URI segment when no prefix', function () {
 });
 
 it('detects authenticated routes with auth middleware', function () {
-    Route::middleware(Illuminate\Auth\Middleware\Authenticate::class)->get('/auth-test', fn() => 'ok');
+    Route::middleware(Authenticate::class)->get('/auth-test', fn() => 'ok');
 
     $route = findRoute('GET', '/auth-test');
     $endpointData = makeEndpoint('auth-test', ['GET'], $route);

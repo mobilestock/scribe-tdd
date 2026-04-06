@@ -4,11 +4,13 @@ use AjCastro\ScribeTdd\Strategies\QueryParameters\AddPaginationParametersFromScr
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Knuckles\Scribe\Tools\DocumentationConfig;
+use Tests\Fixtures\FakeTestController;
 
 beforeEach(function () {
     resetRouteTestResultCache();
 
-    $this->strategy = new AddPaginationParametersFromScribeTdd(new DocumentationConfig(config('scribe') ?? []));
+    $documentationConfig = new DocumentationConfig(config('scribe') ?? []);
+    $this->strategy = new AddPaginationParametersFromScribeTdd($documentationConfig);
 });
 
 it('returns empty array when no test result exists', function () {
@@ -35,12 +37,12 @@ it('returns empty array when no test result exists', function () {
 });
 
 it('returns pagination params when usesPagination tag present', function () {
-    $route = new Route(['GET'], 'items/{id}', ['uses' => 'Tests\Fixtures\FakeTestController@show']);
+    $route = new Route(['GET'], 'items/{id}', ['uses' => FakeTestController::class . '@show']);
     $route->bind(Request::create('/items/1'));
 
-    setupTestResultForRoute($route, 'Tests\Fixtures\FakeTestController', 'show');
+    setupTestResultForRoute($route, FakeTestController::class, 'show');
 
-    $method = new ReflectionMethod(Tests\Fixtures\FakeTestController::class, 'show');
+    $method = new ReflectionMethod(FakeTestController::class, 'show');
 
     $endpoint = makeEndpointData([
         'route' => $route,
@@ -59,12 +61,12 @@ it('returns pagination params when usesPagination tag present', function () {
 });
 
 it('returns empty when no usesPagination tag', function () {
-    $route = new Route(['POST'], 'items', ['uses' => 'Tests\Fixtures\FakeTestController@store']);
+    $route = new Route(['POST'], 'items', ['uses' => FakeTestController::class . '@store']);
     $route->bind(Request::create('/items'));
 
-    setupTestResultForRoute($route, 'Tests\Fixtures\FakeTestController', 'store');
+    setupTestResultForRoute($route, FakeTestController::class, 'store');
 
-    $method = new ReflectionMethod(Tests\Fixtures\FakeTestController::class, 'store');
+    $method = new ReflectionMethod(FakeTestController::class, 'store');
 
     $endpoint = makeEndpointData([
         'route' => $route,

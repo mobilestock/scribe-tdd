@@ -19,7 +19,9 @@ describe('BodyParameters', function () {
             }
         );
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeTrue();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeTrue();
     });
 
     it('excludes data class with query parameters docblock', function () {
@@ -27,7 +29,9 @@ describe('BodyParameters', function () {
         $mockClass->shouldReceive('getDocComment')->andReturn('/** Query parameters */');
         $mockClass->shouldReceive('hasMethod')->andReturn(false);
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeFalse();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeFalse();
     });
 
     it('excludes data class with queryParameters method but no bodyParameters', function () {
@@ -36,7 +40,9 @@ describe('BodyParameters', function () {
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
         $mockClass->shouldReceive('hasMethod')->with('bodyParameters')->andReturn(false);
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeFalse();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeFalse();
     });
 
     it('includes data class with both queryParameters and bodyParameters methods', function () {
@@ -45,7 +51,9 @@ describe('BodyParameters', function () {
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
         $mockClass->shouldReceive('hasMethod')->with('bodyParameters')->andReturn(true);
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeTrue();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeTrue();
     });
 });
 
@@ -61,7 +69,9 @@ describe('QueryParameters', function () {
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn('/** Query parameters */');
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeTrue();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeTrue();
     });
 
     it('includes data class with queryParameters method', function () {
@@ -69,7 +79,9 @@ describe('QueryParameters', function () {
         $mockClass->shouldReceive('getDocComment')->andReturn(false);
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeTrue();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeTrue();
     });
 
     it('excludes data class without query indicators', function () {
@@ -77,6 +89,8 @@ describe('QueryParameters', function () {
         $mockClass->shouldReceive('getDocComment')->andReturn(false);
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(false);
 
-        expect($this->reflection->invoke($this->strategy, $mockClass))->toBeFalse();
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeFalse();
     });
 });

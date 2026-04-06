@@ -3,9 +3,10 @@
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\File;
+use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 
-function makeTestResultEndpoint(string $uri, Route $route, array $httpMethods = ['GET'])
+function makeTestResultEndpoint(string $uri, Route $route, array $httpMethods = ['GET']): ExtractedEndpointData
 {
     $controller = new class {
         public function handle()
@@ -14,12 +15,14 @@ function makeTestResultEndpoint(string $uri, Route $route, array $httpMethods = 
         }
     };
 
-    return makeEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => $httpMethods,
         'method' => new ReflectionMethod($controller, 'handle'),
     ]);
+
+    return $endpoint;
 }
 
 dataset('testResultStrategies', [
@@ -95,5 +98,7 @@ it('returns empty array when no test result exists', function (array $data) {
 
     $route = new Route($data['httpMethods'], 'no-' . $data['uri'], fn() => null);
 
-    expect($strategy->__invoke(makeTestResultEndpoint('no-' . $data['uri'], $route, $data['httpMethods'])))->toBe([]);
+    $result = $strategy->__invoke(makeTestResultEndpoint('no-' . $data['uri'], $route, $data['httpMethods']));
+
+    expect($result)->toBe([]);
 })->with('testResultStrategies');

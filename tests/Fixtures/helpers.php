@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\File;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Camel\Extraction\Metadata;
 use Knuckles\Camel\Extraction\ResponseCollection;
+use Knuckles\Camel\Output\OutputEndpointData;
 
 function setupTestResultForRoute(Route $route, string $testClass, string $testMethod): void
 {
@@ -59,10 +60,12 @@ function makeEndpointData(array $params): ExtractedEndpointData
     $params['metadata'] = new Metadata($params['metadata'] ?? []);
     $params['responses'] = new ResponseCollection($params['responses'] ?? []);
 
-    return new ExtractedEndpointData($params);
+    $endpoint = new ExtractedEndpointData($params);
+
+    return $endpoint;
 }
 
-function makeOutputEndpointData(array $params): Knuckles\Camel\Output\OutputEndpointData
+function makeOutputEndpointData(array $params): OutputEndpointData
 {
     $params['metadata'] = new Metadata($params['metadata'] ?? []);
 
@@ -76,5 +79,7 @@ function makeOutputEndpointData(array $params): Knuckles\Camel\Output\OutputEndp
         $params['responses'] = new ResponseCollection();
     }
 
-    return new Knuckles\Camel\Output\OutputEndpointData($params);
+    $endpoint = new OutputEndpointData($params);
+
+    return $endpoint;
 }

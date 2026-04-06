@@ -28,7 +28,7 @@ function makeOrphanEndpoint(
 ): Knuckles\Camel\Extraction\ExtractedEndpointData {
     $route = new Route($httpMethods, $uri, fn() => null);
 
-    return makeEndpointData([
+    $endpoint = makeEndpointData([
         'route' => $route,
         'uri' => $uri,
         'httpMethods' => $httpMethods,
@@ -41,6 +41,8 @@ function makeOrphanEndpoint(
             'handle'
         ),
     ]);
+
+    return $endpoint;
 }
 
 dataset('tagStrategies', [
@@ -119,7 +121,9 @@ it('returns empty array when no test result exists', function (array $data) {
     resetRouteTestResultCache();
     $strategy = new ($data['class'])(new DocumentationConfig(config('scribe') ?? []));
 
-    expect($strategy->__invoke(makeOrphanEndpoint($data['orphanUri'], $data['orphanMethods'])))->toBe([]);
+    $result = $strategy->__invoke(makeOrphanEndpoint($data['orphanUri'], $data['orphanMethods']));
+
+    expect($result)->toBe([]);
 })->with('tagStrategies');
 
 it('extracts data from docblock when test result exists', function (array $data) {

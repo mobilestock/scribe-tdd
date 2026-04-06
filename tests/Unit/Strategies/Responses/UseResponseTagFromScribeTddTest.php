@@ -9,7 +9,8 @@ use Tests\Fixtures\FakeTestController;
 beforeEach(function () {
     resetRouteTestResultCache();
 
-    $this->strategy = new UseResponseTagFromScribeTdd(new DocumentationConfig(config('scribe') ?? []));
+    $documentationConfig = new DocumentationConfig(config('scribe') ?? []);
+    $this->strategy = new UseResponseTagFromScribeTdd($documentationConfig);
 });
 
 it('returns empty array when no test result exists', function () {
@@ -36,10 +37,10 @@ it('returns empty array when no test result exists', function () {
 });
 
 it('extracts response tag from docblock when test result exists', function () {
-    $route = new Route(['GET'], 'items/{id}', ['uses' => 'Tests\Fixtures\FakeTestController@show']);
+    $route = new Route(['GET'], 'items/{id}', ['uses' => FakeTestController::class . '@show']);
     $route->bind(Request::create('/items/1'));
 
-    setupTestResultForRoute($route, 'Tests\Fixtures\FakeTestController', 'show');
+    setupTestResultForRoute($route, FakeTestController::class, 'show');
 
     $method = new ReflectionMethod(FakeTestController::class, 'show');
 
