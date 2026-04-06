@@ -11,17 +11,7 @@ describe('operationId', function () {
     it('strips Controller suffix from controller name', function () {
         Route::get('/invoices', 'App\Http\Controllers\InvoiceController@index');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'invoices',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'invoices', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -31,17 +21,7 @@ describe('operationId', function () {
     it('keeps controller name without Controller suffix unchanged', function () {
         Route::post('/domains', 'App\Http\Controllers\Domain@store');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'domains',
-            'httpMethods' => ['POST'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'domains', 'httpMethods' => ['POST']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -51,17 +31,7 @@ describe('operationId', function () {
     it('appends model name for batching routes', function () {
         Route::get('/batching/invoices', 'App\Http\Controllers\BatchingController@index');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'batching/invoices',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'batching/invoices', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -71,17 +41,7 @@ describe('operationId', function () {
     it('generates URI-based operationId when no route matches', function () {
         Route::post('/only-post', 'App\Http\Controllers\OnlyPostController@store');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'only-post',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'only-post', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -91,17 +51,7 @@ describe('operationId', function () {
     it('generates URI-based operationId for closure routes', function () {
         Route::get('/health', fn() => 'ok');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'health',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'health', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -111,17 +61,7 @@ describe('operationId', function () {
     it('uses HTTP method as operationId for root URI', function () {
         Route::get('/', fn() => 'ok');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => '/',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => '/', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -131,17 +71,7 @@ describe('operationId', function () {
     it('generates camelCase operationId for multi-segment URI closure', function () {
         Route::post('/api/v1/webhook', fn() => 'ok');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'api/v1/webhook',
-            'httpMethods' => ['POST'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'api/v1/webhook', 'httpMethods' => ['POST']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -151,17 +81,7 @@ describe('operationId', function () {
     it('strips path parameters from URI-based operationId', function () {
         Route::get('/items/{id}', fn() => 'ok');
 
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'items/{id}',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'items/{id}', 'httpMethods' => ['GET']]);
 
         $result = (new ReflectionMethod($this->generator, 'operationId'))->invoke($this->generator, $endpoint);
 
@@ -174,11 +94,6 @@ describe('generateResponseContentSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
             'responses' => [
                 [
                     'status' => 200,
@@ -187,13 +102,11 @@ describe('generateResponseContentSpec', function () {
                     'description' => '',
                 ],
             ],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
         $result = $reflection->invoke($this->generator, '{"ok":true}', $endpoint);
 
-        // Headers should be flattened
         expect($endpoint->responses[0]->headers['Content-Type'])->toBe('application/json');
         expect($result)->toBeArray();
     });
@@ -204,9 +117,7 @@ describe('generateEndpointParametersSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
-            'metadata' => [],
             'headers' => ['X-Custom' => 'value'],
-            'urlParameters' => [],
             'queryParameters' => [
                 'ids' => [
                     'name' => 'ids',
@@ -216,9 +127,6 @@ describe('generateEndpointParametersSpec', function () {
                     'example' => [1, 2],
                 ],
             ],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointParametersSpec');
@@ -233,9 +141,6 @@ describe('generateEndpointParametersSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'test',
             'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
             'queryParameters' => [
                 'page' => [
                     'name' => 'page',
@@ -245,9 +150,6 @@ describe('generateEndpointParametersSpec', function () {
                     'example' => 1,
                 ],
             ],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointParametersSpec');
@@ -260,17 +162,7 @@ describe('generateEndpointParametersSpec', function () {
 
 describe('generateSchemaForResponseValue', function () {
     it('adds int64 format for large integers', function () {
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'test',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'test', 'httpMethods' => ['GET']]);
 
         $largeInt = 2 ** 32 + 1;
         $result = $this->generator->generateSchemaForResponseValue($largeInt, $endpoint, 'test');
@@ -279,17 +171,7 @@ describe('generateSchemaForResponseValue', function () {
     });
 
     it('does not add int64 format for small integers', function () {
-        $endpoint = makeOutputEndpointData([
-            'uri' => 'test',
-            'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
-            'responses' => [],
-            'responseFields' => [],
-        ]);
+        $endpoint = makeOutputEndpointData(['uri' => 'test', 'httpMethods' => ['GET']]);
 
         $result = $this->generator->generateSchemaForResponseValue(42, $endpoint, 'test');
 
@@ -304,11 +186,6 @@ describe('generateEndpointResponsesSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'invoices',
             'httpMethods' => ['GET'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
             'responses' => [
                 [
                     'status' => 200,
@@ -317,7 +194,6 @@ describe('generateEndpointResponsesSpec', function () {
                     'description' => '',
                 ],
             ],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointResponsesSpec');
@@ -332,11 +208,6 @@ describe('generateEndpointResponsesSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'invoices',
             'httpMethods' => ['POST'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
             'responses' => [
                 [
                     'status' => 201,
@@ -351,7 +222,6 @@ describe('generateEndpointResponsesSpec', function () {
                     'description' => '',
                 ],
             ],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointResponsesSpec');
@@ -369,11 +239,6 @@ describe('generateEndpointResponsesSpec', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'invoices/{id}',
             'httpMethods' => ['DELETE'],
-            'metadata' => [],
-            'headers' => [],
-            'urlParameters' => [],
-            'queryParameters' => [],
-            'bodyParameters' => [],
             'responses' => [
                 [
                     'status' => 204,
@@ -382,13 +247,11 @@ describe('generateEndpointResponsesSpec', function () {
                     'description' => '',
                 ],
             ],
-            'responseFields' => [],
         ]);
 
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointResponsesSpec');
         $result = $reflection->invoke($this->generator, $endpoint);
 
-        // 204 has no content, so no title should be injected (and no error)
         expect($result)->toHaveKey(204);
         expect($result[204])->not->toHaveKey('content');
     });

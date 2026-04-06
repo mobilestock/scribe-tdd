@@ -41,10 +41,7 @@ it('parses arrays of scalars with array type suffix', function () {
 
 it('parses arrays of objects with object[] type', function () {
     $result = BodyParamParser::parse([
-        'items' => [
-            ['name' => 'Item 1', 'qty' => 2],
-            ['name' => 'Item 2', 'qty' => 3],
-        ],
+        'items' => [['name' => 'Item 1', 'qty' => 2], ['name' => 'Item 2', 'qty' => 3]],
     ]);
 
     expect($result['items']['type'])->toBe('object[]');

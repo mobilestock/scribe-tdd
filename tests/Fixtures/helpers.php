@@ -67,6 +67,18 @@ function makeEndpointData(array $params): ExtractedEndpointData
 
 function makeOutputEndpointData(array $params): OutputEndpointData
 {
+    $base = [
+        'uri' => '',
+        'httpMethods' => [],
+        'metadata' => [],
+        'headers' => [],
+        'urlParameters' => [],
+        'queryParameters' => [],
+        'bodyParameters' => [],
+        'responses' => [],
+        'responseFields' => [],
+    ];
+    $params = array_merge($base, $params);
     $params['metadata'] = new Metadata($params['metadata'] ?? []);
 
     if (is_array($params['responses'] ?? null)) {

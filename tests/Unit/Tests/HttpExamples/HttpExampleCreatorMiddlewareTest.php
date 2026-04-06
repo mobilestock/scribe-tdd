@@ -2,6 +2,7 @@
 
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use AjCastro\ScribeTdd\Tests\HttpExamples\HttpExampleCreatorMiddleware;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
@@ -12,13 +13,13 @@ beforeEach(function () {
 });
 
 it('captures request and response through middleware', function () {
-    $route = new Route(['POST'], 'middleware-test', fn () => null);
+    $route = new Route(['POST'], 'middleware-test', fn() => null);
     $route->bind(Request::create('/middleware-test'));
 
     $request = Request::create('/middleware-test', 'POST', ['name' => 'test']);
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
-    $test = Mockery::mock(\Illuminate\Foundation\Testing\TestCase::class);
+    $test = Mockery::mock(TestCase::class);
     $instance = new ExampleCreator([
         'test' => $test,
         'testMethod' => 'test_method',
@@ -45,13 +46,13 @@ it('captures request and response through middleware', function () {
 });
 
 it('preserves original body params even if controller modifies request', function () {
-    $route = new Route(['POST'], 'modify-test', fn () => null);
+    $route = new Route(['POST'], 'modify-test', fn() => null);
     $route->bind(Request::create('/modify-test'));
 
     $request = Request::create('/modify-test', 'POST', ['name' => 'original']);
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
-    $test = Mockery::mock(\Illuminate\Foundation\Testing\TestCase::class);
+    $test = Mockery::mock(TestCase::class);
     $instance = new ExampleCreator([
         'test' => $test,
         'testMethod' => 'test_modify',
@@ -74,13 +75,13 @@ it('preserves original body params even if controller modifies request', functio
 });
 
 it('preserves original query params even if controller modifies request', function () {
-    $route = new Route(['GET'], 'query-modify-test', fn () => null);
+    $route = new Route(['GET'], 'query-modify-test', fn() => null);
     $route->bind(Request::create('/query-modify-test'));
 
     $request = Request::create('/query-modify-test?status=active', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
-    $test = Mockery::mock(\Illuminate\Foundation\Testing\TestCase::class);
+    $test = Mockery::mock(TestCase::class);
     $instance = new ExampleCreator([
         'test' => $test,
         'testMethod' => 'test_query',

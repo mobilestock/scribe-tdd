@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
+use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Tests\Fixtures\FakeTestController;
 
@@ -22,10 +23,8 @@ function makeDocblockTestEndpoint(string $uri, array $httpMethods, string $actio
     return [$route, $endpoint];
 }
 
-function makeOrphanEndpoint(
-    string $uri = 'no-result',
-    array $httpMethods = ['GET']
-): Knuckles\Camel\Extraction\ExtractedEndpointData {
+function makeOrphanEndpoint(string $uri = 'no-result', array $httpMethods = ['GET']): ExtractedEndpointData
+{
     $route = new Route($httpMethods, $uri, fn() => null);
 
     $endpoint = makeEndpointData([

@@ -2,6 +2,7 @@
 
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use AjCastro\ScribeTdd\Tests\ExampleRequest;
+use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
@@ -13,7 +14,7 @@ beforeEach(function () {
 
 function makeExampleCreatorForRequest(): ExampleCreator
 {
-    $test = Mockery::mock(\Illuminate\Foundation\Testing\TestCase::class);
+    $test = Mockery::mock(TestCase::class);
     return new ExampleCreator([
         'test' => $test,
         'testMethod' => 'test_method',
@@ -24,12 +25,12 @@ function makeExampleCreatorForRequest(): ExampleCreator
 }
 
 it('captures url parameters from request', function () {
-    $route = new Route(['GET'], 'items/{id}', fn () => null);
+    $route = new Route(['GET'], 'items/{id}', fn() => null);
     $route->bind(Request::create('/items/42'));
     $route->setParameter('id', 42);
 
     $request = Request::create('/items/42', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('{"ok":true}', 200);
     $creator = makeExampleCreatorForRequest();
@@ -43,12 +44,12 @@ it('captures url parameters from request', function () {
 });
 
 it('detects required url parameters', function () {
-    $route = new Route(['GET'], 'items/{id}', fn () => null);
+    $route = new Route(['GET'], 'items/{id}', fn() => null);
     $route->bind(Request::create('/items/1'));
     $route->setParameter('id', 1);
 
     $request = Request::create('/items/1', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 200);
     $creator = makeExampleCreatorForRequest();
@@ -60,12 +61,12 @@ it('detects required url parameters', function () {
 });
 
 it('detects optional url parameters', function () {
-    $route = new Route(['GET'], 'items/{id?}', fn () => null);
+    $route = new Route(['GET'], 'items/{id?}', fn() => null);
     $route->bind(Request::create('/items/1'));
     $route->setParameter('id', 1);
 
     $request = Request::create('/items/1', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 200);
     $creator = makeExampleCreatorForRequest();
@@ -77,11 +78,11 @@ it('detects optional url parameters', function () {
 });
 
 it('captures query parameters', function () {
-    $route = new Route(['GET'], 'items', fn () => null);
+    $route = new Route(['GET'], 'items', fn() => null);
     $route->bind(Request::create('/items'));
 
     $request = Request::create('/items?page=2&limit=10', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 200);
     $creator = makeExampleCreatorForRequest();
@@ -94,11 +95,11 @@ it('captures query parameters', function () {
 });
 
 it('captures body parameters', function () {
-    $route = new Route(['POST'], 'items', fn () => null);
+    $route = new Route(['POST'], 'items', fn() => null);
     $route->bind(Request::create('/items'));
 
     $request = Request::create('/items', 'POST', ['name' => 'Widget', 'qty' => 5]);
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 201);
     $creator = makeExampleCreatorForRequest();
@@ -111,11 +112,11 @@ it('captures body parameters', function () {
 });
 
 it('captures response with status, headers, content and description', function () {
-    $route = new Route(['POST'], 'items', fn () => null);
+    $route = new Route(['POST'], 'items', fn() => null);
     $route->bind(Request::create('/items'));
 
     $request = Request::create('/items', 'POST');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('{"id":1}', 201, ['Content-Type' => 'application/json']);
     $creator = makeExampleCreatorForRequest();
@@ -131,15 +132,18 @@ it('captures response with status, headers, content and description', function (
 
 it('converts eloquent model url param to its key', function () {
     $model = new class {
-        public function getKey() { return 99; }
+        public function getKey()
+        {
+            return 99;
+        }
     };
 
-    $route = new Route(['GET'], 'items/{item}', fn () => null);
+    $route = new Route(['GET'], 'items/{item}', fn() => null);
     $route->bind(Request::create('/items/99'));
     $route->setParameter('item', $model);
 
     $request = Request::create('/items/99', 'GET');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 200);
     $creator = makeExampleCreatorForRequest();
@@ -151,11 +155,11 @@ it('converts eloquent model url param to its key', function () {
 });
 
 it('generates unique id', function () {
-    $route = new Route(['GET'], 'test', fn () => null);
+    $route = new Route(['GET'], 'test', fn() => null);
     $route->bind(Request::create('/test'));
 
     $request = Request::create('/test');
-    $request->setRouteResolver(fn () => $route);
+    $request->setRouteResolver(fn() => $route);
 
     $response = new Response('', 200);
     $creator = makeExampleCreatorForRequest();
