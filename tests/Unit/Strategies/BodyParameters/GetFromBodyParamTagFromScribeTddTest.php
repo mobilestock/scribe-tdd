@@ -4,11 +4,23 @@ use AjCastro\ScribeTdd\Strategies\BodyParameters\GetFromBodyParamTagFromScribeTd
 use Illuminate\Http\Request;
 use Illuminate\Routing\Route;
 use Knuckles\Scribe\Tools\DocumentationConfig;
+use Tests\Fixtures\FakeTestController;
 
 beforeEach(function () {
     resetRouteTestResultCache();
 
-    $this->strategy = new GetFromBodyParamTagFromScribeTdd(new DocumentationConfig(config('scribe') ?? []));
+    $this->endpointData = [
+        'metadata' => [],
+        'headers' => [],
+        'urlParameters' => [],
+        'queryParameters' => [],
+        'bodyParameters' => [],
+        'responses' => [],
+        'responseFields' => [],
+    ];
+
+    $documentationConfig = new DocumentationConfig(config('scribe') ?? []);
+    $this->strategy = new GetFromBodyParamTagFromScribeTdd($documentationConfig);
 });
 
 it('returns empty array when no test result exists', function () {
@@ -22,19 +34,14 @@ it('returns empty array when no test result exists', function () {
         'handle'
     );
 
-    $endpoint = makeEndpointData([
-        'route' => $route,
-        'uri' => 'no-result',
-        'httpMethods' => ['POST'],
-        'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
-    ]);
+    $endpoint = makeEndpointData(
+        array_merge($this->endpointData, [
+            'route' => $route,
+            'uri' => 'no-result',
+            'httpMethods' => ['POST'],
+            'method' => $method,
+        ])
+    );
 
     $result = $this->strategy->__invoke($endpoint);
 
@@ -42,26 +49,21 @@ it('returns empty array when no test result exists', function () {
 });
 
 it('extracts body params from docblock when test result exists', function () {
-    $route = new Route(['POST'], 'items', ['uses' => 'Tests\Fixtures\FakeTestController@store']);
+    $route = new Route(['POST'], 'items', ['uses' => FakeTestController::class . '@store']);
     $route->bind(Request::create('/items'));
 
-    setupTestResultForRoute($route, 'Tests\Fixtures\FakeTestController', 'store');
+    setupTestResultForRoute($route, FakeTestController::class, 'store');
 
-    $method = new ReflectionMethod(Tests\Fixtures\FakeTestController::class, 'store');
+    $method = new ReflectionMethod(FakeTestController::class, 'store');
 
-    $endpoint = makeEndpointData([
-        'route' => $route,
-        'uri' => 'items',
-        'httpMethods' => ['POST'],
-        'method' => $method,
-        'metadata' => [],
-        'headers' => [],
-        'urlParameters' => [],
-        'queryParameters' => [],
-        'bodyParameters' => [],
-        'responses' => [],
-        'responseFields' => [],
-    ]);
+    $endpoint = makeEndpointData(
+        array_merge($this->endpointData, [
+            'route' => $route,
+            'uri' => 'items',
+            'httpMethods' => ['POST'],
+            'method' => $method,
+        ])
+    );
 
     $result = $this->strategy->__invoke($endpoint);
 
