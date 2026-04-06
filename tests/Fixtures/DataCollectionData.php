@@ -10,8 +10,7 @@ class DataCollectionData extends Data
 {
     public function __construct(
         public string $title,
-        #[DataCollectionOf(NestedItemData::class)]
-        public DataCollection $items,
+        #[DataCollectionOf(NestedItemData::class)] public DataCollection $items
     ) {
     }
 }

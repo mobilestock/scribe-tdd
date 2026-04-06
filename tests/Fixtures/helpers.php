@@ -48,19 +48,19 @@ function makeEndpointData(array $params): ExtractedEndpointData
     return new ExtractedEndpointData($params);
 }
 
-function makeOutputEndpointData(array $params): \Knuckles\Camel\Output\OutputEndpointData
+function makeOutputEndpointData(array $params): Knuckles\Camel\Output\OutputEndpointData
 {
     $params['metadata'] = new Metadata($params['metadata'] ?? []);
 
     if (is_array($params['responses'] ?? null)) {
         $responses = [];
         foreach ($params['responses'] as $r) {
-            $responses[] = new \Knuckles\Camel\Extraction\Response($r);
+            $responses[] = new Knuckles\Camel\Extraction\Response($r);
         }
         $params['responses'] = new ResponseCollection($responses);
     } else {
         $params['responses'] = new ResponseCollection();
     }
 
-    return new \Knuckles\Camel\Output\OutputEndpointData($params);
+    return new Knuckles\Camel\Output\OutputEndpointData($params);
 }
