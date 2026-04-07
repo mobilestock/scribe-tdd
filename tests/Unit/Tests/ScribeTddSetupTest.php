@@ -194,6 +194,10 @@ describe('setUpScribeTdd', function () {
                 return self::$shutdownRegistered;
             }
 
+            public function triggerScribeGeneration(): void
+            {
+            }
+
             public function afterApplicationCreated(callable $callback)
             {
                 $this->afterCb = $callback;
