@@ -208,19 +208,19 @@ describe('buildPayloadForNestedDataExpansion', function () {
         expect($result['items'][0])->toHaveKey('qty');
     });
 
-    it('skips builtin types without DataCollectionOf', function () {
+    it('includes builtin types without DataCollectionOf as null', function () {
         $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', SimpleData::class);
 
-        expect($result)->toBe([]);
+        expect($result)->toBe(['name' => null, 'quantity' => null]);
     });
 
-    it('skips union type parameters', function () {
+    it('includes builtin types and skips union type parameters', function () {
         $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', MixedParamData::class);
 
-        expect($result)->toBe([]);
+        expect($result)->toBe(['name' => null]);
     });
 
-    it('skips non-existent class type hints in constructor parameters', function () {
+    it('includes builtin types and skips non-existent class type hints', function () {
         eval('
             class DataWithNonExistentTypeHint extends Spatie\LaravelData\Data {
                 public function __construct(
@@ -232,7 +232,7 @@ describe('buildPayloadForNestedDataExpansion', function () {
 
         $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', 'DataWithNonExistentTypeHint');
 
-        expect($result)->toBe([]);
+        expect($result)->toBe(['name' => null]);
     });
 });
 
@@ -250,7 +250,7 @@ describe('getRouteValidationRules', function () {
         expect($result)->not->toBeEmpty();
     });
 
-    it('returns empty rules when ALL builtin properties have defaults (known Spatie limitation)', function () {
+    it('returns rules for builtin properties with defaults when payload includes their keys', function () {
         eval('
             class AllDefaultsData extends \Spatie\LaravelData\Data {
                 public function __construct(
@@ -263,7 +263,9 @@ describe('getRouteValidationRules', function () {
 
         $result = invokeStrategy($this->strategy, 'getRouteValidationRules', 'AllDefaultsData');
 
-        expect($result)->toBe([]);
+        expect($result)->toHaveKey('name');
+        expect($result)->toHaveKey('quantity');
+        expect($result)->toHaveKey('notes');
     });
 
     it('includes nested Data rules even when nested property has default', function () {

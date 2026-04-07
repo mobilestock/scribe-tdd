@@ -90,6 +90,8 @@ class GetFromLaravelDataBase extends Strategy
                 if ($collectionOf) {
                     $visited = [$className => true, $collectionOf->getName() => true];
                     $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, $visited)];
+                } else {
+                    $payload[Str::snake($param->getName())] = null;
                 }
                 continue;
             }
