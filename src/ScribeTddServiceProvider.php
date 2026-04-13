@@ -23,7 +23,6 @@ class ScribeTddServiceProvider extends ServiceProvider
         $excludeRoutes = Config::get('scribe.routes.0.exclude');
         $excludeRoutes[] = '_ignition/*';
         $excludeRoutes[] = 'oauth/*';
-        $excludeRoutes[] = 'up';
         $excludeRoutes[] = 'storage/*';
 
         Config::set('scribe.routes.0.match.prefixes', ['*']);
