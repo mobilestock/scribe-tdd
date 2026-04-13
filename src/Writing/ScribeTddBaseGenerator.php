@@ -67,7 +67,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
                 continue;
             }
 
-            $phrase = $this->reasonPhrase((int) $code);
+            $phrase = (int) $code === 200 ? '' : $this->reasonPhrase((int) $code);
 
             foreach ($responseSpec['content'] as &$mediaType) {
                 if (isset($mediaType['schema']) && is_array($mediaType['schema'])) {

@@ -199,7 +199,7 @@ describe('generateEndpointResponsesSpec', function () {
         $reflection = new ReflectionMethod($this->generator, 'generateEndpointResponsesSpec');
         $result = $reflection->invoke($this->generator, $endpoint);
 
-        expect($result[200]['content']['application/json']['schema']['title'])->toBe('InvoiceIndexOK');
+        expect($result[200]['content']['application/json']['schema']['title'])->toBe('InvoiceIndex');
     });
 
     it('derives reason phrase from Symfony Response for all HTTP status codes', function () {
