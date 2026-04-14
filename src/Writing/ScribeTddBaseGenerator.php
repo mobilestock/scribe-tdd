@@ -22,7 +22,30 @@ class ScribeTddBaseGenerator extends BaseGenerator
             }
         }
 
-        return parent::generateResponseContentSpec($responseContent, $endpoint);
+        $result = parent::generateResponseContentSpec($responseContent, $endpoint);
+
+        if (!isset($result['application/json']['schema'])) {
+            return $result;
+        }
+
+        $schema = $result['application/json']['schema'];
+
+        $isExpandableArrayOfObjects =
+            ($schema['type'] ?? '') === 'array' &&
+            ($schema['items']['type'] ?? '') === 'object' &&
+            empty($schema['items']['properties']) &&
+            is_array($schema['example'] ?? null) &&
+            ($schema['example'][0] ?? null) instanceof \stdClass;
+
+        if ($isExpandableArrayOfObjects) {
+            $result['application/json']['schema']['items'] = $this->generateSchemaForResponseValue(
+                $schema['example'][0],
+                $endpoint,
+                ''
+            );
+        }
+
+        return $result;
     }
 
     protected function generateEndpointParametersSpec(OutputEndpointData $endpoint): array

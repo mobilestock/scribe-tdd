@@ -110,6 +110,156 @@ describe('generateResponseContentSpec', function () {
         expect($endpoint->responses[0]->headers['Content-Type'])->toBe('application/json');
         expect($result)->toBeArray();
     });
+
+    it('should expand array of objects items with properties from example data', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => '[{"id":1,"name":"Test","active":true}]',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke($this->generator, '[{"id":1,"name":"Test","active":true}]', $endpoint);
+
+        $schema = $result['application/json']['schema'];
+
+        expect($schema['type'])->toBe('array');
+        expect($schema['items']['type'])->toBe('object');
+        expect($schema['items']['properties'])->toBeArray();
+        expect($schema['items']['properties']['id']['type'])->toBe('integer');
+        expect($schema['items']['properties']['name']['type'])->toBe('string');
+        expect($schema['items']['properties']['active']['type'])->toBe('boolean');
+    });
+
+    it('should return non-JSON responses unchanged', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => 'plain text response',
+                    'headers' => ['Content-Type' => ['text/plain']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke($this->generator, 'plain text response', $endpoint);
+
+        expect($result)->toHaveKey('text/plain');
+        expect($result)->not->toHaveKey('application/json');
+        expect($result['text/plain']['schema']['type'])->toBe('string');
+    });
+
+    it('should not expand empty array responses', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => '[]',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke($this->generator, '[]', $endpoint);
+
+        $schema = $result['application/json']['schema'];
+
+        expect($schema['type'])->toBe('array');
+        expect($schema['items']['type'])->toBe('object');
+        expect($schema['items'])->not->toHaveKey('properties');
+    });
+
+    it('should not expand array of primitives', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => '["a","b","c"]',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke($this->generator, '["a","b","c"]', $endpoint);
+
+        $schema = $result['application/json']['schema'];
+
+        expect($schema['type'])->toBe('array');
+        expect($schema['items']['type'])->toBe('string');
+        expect($schema['items'])->not->toHaveKey('properties');
+    });
+
+    it('should not modify object responses', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => '{"id":1,"name":"Test"}',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke($this->generator, '{"id":1,"name":"Test"}', $endpoint);
+
+        $schema = $result['application/json']['schema'];
+
+        expect($schema['type'])->toBe('object');
+        expect($schema['properties']['id']['type'])->toBe('integer');
+        expect($schema['properties']['name']['type'])->toBe('string');
+    });
+
+    it('should expand nested objects within array items', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' => '[{"id":1,"address":{"street":"Main St","city":"NYC"}}]',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke(
+            $this->generator,
+            '[{"id":1,"address":{"street":"Main St","city":"NYC"}}]',
+            $endpoint
+        );
+
+        $schema = $result['application/json']['schema'];
+        $addressSchema = $schema['items']['properties']['address'];
+
+        expect($addressSchema['type'])->toBe('object');
+        expect($addressSchema['properties']['street']['type'])->toBe('string');
+        expect($addressSchema['properties']['city']['type'])->toBe('string');
+    });
 });
 
 describe('generateEndpointParametersSpec', function () {
