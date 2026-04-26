@@ -11,6 +11,10 @@ class GetFromLaravelData extends GetFromLaravelDataBase
 
     protected function isLaravelDataMeantForThisStrategy(ReflectionClass $laravelDataReflectionClass): bool
     {
+        if ($this->isHttpMethodWithoutBody()) {
+            return true;
+        }
+
         $docBlock = $laravelDataReflectionClass->getDocComment();
 
         if ($docBlock && str_contains(mb_strtolower($docBlock), 'query parameters')) {

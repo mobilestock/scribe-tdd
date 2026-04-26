@@ -22,9 +22,22 @@ class GetFromLaravelDataBase extends Strategy
 
     protected string $customParameterDataMethodName = '';
 
+    private const HTTP_METHODS_WITHOUT_BODY = ['GET', 'HEAD', 'DELETE'];
+
     public function __invoke(ExtractedEndpointData $endpointData, array $settings = []): ?array
     {
+        $this->endpointData = $endpointData;
+
         return $this->getParametersFromLaravelData($endpointData->method, $endpointData->route);
+    }
+
+    protected function isHttpMethodWithoutBody(): bool
+    {
+        $httpMethod = strtoupper($this->endpointData->httpMethods[0]);
+
+        $isMethodWithoutBody = in_array($httpMethod, self::HTTP_METHODS_WITHOUT_BODY);
+
+        return $isMethodWithoutBody;
     }
 
     protected function getParametersFromLaravelData(ReflectionFunctionAbstract $method, $route): array
