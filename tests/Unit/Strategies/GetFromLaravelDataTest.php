@@ -1,6 +1,18 @@
 <?php
 
+use Knuckles\Camel\Extraction\ExtractedEndpointData;
+use Knuckles\Scribe\Extracting\Strategies\Strategy;
 use Knuckles\Scribe\Tools\DocumentationConfig;
+
+dataset('http methods without body', ['GET', 'HEAD', 'DELETE']);
+
+function setEndpointDataWithHttpMethod(Strategy $strategy, string $httpMethod): void
+{
+    $endpointData = Mockery::mock(ExtractedEndpointData::class);
+    $endpointData->httpMethods = [$httpMethod];
+
+    $strategy->endpointData = $endpointData;
+}
 
 describe('BodyParameters', function () {
     beforeEach(function () {
@@ -10,7 +22,9 @@ describe('BodyParameters', function () {
         $this->reflection = new ReflectionMethod($this->strategy, 'isLaravelDataMeantForThisStrategy');
     });
 
-    it('identifies body data class by default', function () {
+    it('should identify body data class by default for POST requests', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = new ReflectionClass(
             new class extends Spatie\LaravelData\Data {
                 public function __construct(public string $name = '')
@@ -24,7 +38,25 @@ describe('BodyParameters', function () {
         expect($result)->toBeTrue();
     });
 
-    it('excludes data class with query parameters docblock', function () {
+    it('should exclude data class for HTTP methods without body', function (string $httpMethod) {
+        setEndpointDataWithHttpMethod($this->strategy, $httpMethod);
+
+        $mockClass = new ReflectionClass(
+            new class extends Spatie\LaravelData\Data {
+                public function __construct(public string $name = '')
+                {
+                }
+            }
+        );
+
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeFalse();
+    })->with('http methods without body');
+
+    it('should exclude data class with query parameters docblock', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn('/** Query parameters */');
         $mockClass->shouldReceive('hasMethod')->andReturn(false);
@@ -34,7 +66,9 @@ describe('BodyParameters', function () {
         expect($result)->toBeFalse();
     });
 
-    it('excludes data class with queryParameters method but no bodyParameters', function () {
+    it('should exclude data class with queryParameters method but no bodyParameters', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn(false);
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
@@ -45,7 +79,9 @@ describe('BodyParameters', function () {
         expect($result)->toBeFalse();
     });
 
-    it('includes data class with both queryParameters and bodyParameters methods', function () {
+    it('should include data class with both queryParameters and bodyParameters methods', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn(false);
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
@@ -65,7 +101,37 @@ describe('QueryParameters', function () {
         $this->reflection = new ReflectionMethod($this->strategy, 'isLaravelDataMeantForThisStrategy');
     });
 
-    it('includes data class with query parameters docblock', function () {
+    it('should include data class for HTTP methods without body', function (string $httpMethod) {
+        setEndpointDataWithHttpMethod($this->strategy, $httpMethod);
+
+        $mockClass = new ReflectionClass(
+            new class extends Spatie\LaravelData\Data {
+                public function __construct(public string $name = '')
+                {
+                }
+            }
+        );
+
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeTrue();
+    })->with('http methods without body');
+
+    it('should exclude data class for POST requests without query indicators', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
+        $mockClass = Mockery::mock(ReflectionClass::class);
+        $mockClass->shouldReceive('getDocComment')->andReturn(false);
+        $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(false);
+
+        $result = $this->reflection->invoke($this->strategy, $mockClass);
+
+        expect($result)->toBeFalse();
+    });
+
+    it('should include data class with query parameters docblock', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn('/** Query parameters */');
 
@@ -74,7 +140,9 @@ describe('QueryParameters', function () {
         expect($result)->toBeTrue();
     });
 
-    it('includes data class with queryParameters method', function () {
+    it('should include data class with queryParameters method', function () {
+        setEndpointDataWithHttpMethod($this->strategy, 'POST');
+
         $mockClass = Mockery::mock(ReflectionClass::class);
         $mockClass->shouldReceive('getDocComment')->andReturn(false);
         $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(true);
@@ -82,15 +150,5 @@ describe('QueryParameters', function () {
         $result = $this->reflection->invoke($this->strategy, $mockClass);
 
         expect($result)->toBeTrue();
-    });
-
-    it('excludes data class without query indicators', function () {
-        $mockClass = Mockery::mock(ReflectionClass::class);
-        $mockClass->shouldReceive('getDocComment')->andReturn(false);
-        $mockClass->shouldReceive('hasMethod')->with('queryParameters')->andReturn(false);
-
-        $result = $this->reflection->invoke($this->strategy, $mockClass);
-
-        expect($result)->toBeFalse();
     });
 });
