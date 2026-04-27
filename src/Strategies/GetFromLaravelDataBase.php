@@ -33,7 +33,7 @@ class GetFromLaravelDataBase extends Strategy
 
     protected function isHttpMethodWithoutBody(): bool
     {
-        $httpMethod = strtoupper($this->endpointData->httpMethods[0]);
+        $httpMethod = mb_strtoupper($this->endpointData->httpMethods[0]);
 
         $isMethodWithoutBody = in_array($httpMethod, self::HTTP_METHODS_WITHOUT_BODY);
 
