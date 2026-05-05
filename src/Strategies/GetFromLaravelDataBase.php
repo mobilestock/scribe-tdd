@@ -2,7 +2,11 @@
 
 namespace AjCastro\ScribeTdd\Strategies;
 
+use Illuminate\Contracts\Validation\Rule;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
+use Illuminate\Validation\NestedRules;
+use Illuminate\Validation\Rules\Enum as EnumRule;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\ParsesValidationRules;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
@@ -72,13 +76,53 @@ class GetFromLaravelDataBase extends Strategy
 
     protected function getRouteValidationRules(string $className): array
     {
-        if (method_exists($className, 'getValidationRules')) {
-            $payload = $this->buildPayloadForNestedDataExpansion($className);
-
-            return $className::getValidationRules($payload);
+        if (!method_exists($className, 'getValidationRules')) {
+            return [];
         }
 
-        return [];
+        $payload = $this->buildPayloadForNestedDataExpansion($className);
+        $rules = $className::getValidationRules($payload);
+
+        $rules = $this->expandNestedDataCollectionRules($className, $rules);
+
+        return $rules;
+    }
+
+    protected function expandNestedDataCollectionRules(string $className, array $rules): array
+    {
+        $reflection = new ReflectionClass($className);
+        $constructor = $reflection->getConstructor();
+
+        if (!$constructor) {
+            return $rules;
+        }
+
+        $parameters = $constructor->getParameters();
+        foreach ($parameters as $param) {
+            $collectionOf = $this->getDataCollectionOfClass($param);
+
+            if (!$collectionOf) {
+                continue;
+            }
+
+            $paramName = $param->getName();
+            $fieldName = Str::snake($paramName);
+            /** @var class-string<Data> $nestedClassName */
+            $nestedClassName = $collectionOf->getName();
+
+            $nestedPayload = $this->buildPayloadForNestedDataExpansion($nestedClassName);
+            $nestedRules = $nestedClassName::getValidationRules($nestedPayload);
+
+            foreach ($nestedRules as $nestedKey => $nestedRule) {
+                $prefixedKey = "{$fieldName}.*.{$nestedKey}";
+
+                if (!isset($rules[$prefixedKey])) {
+                    $rules[$prefixedKey] = $nestedRule;
+                }
+            }
+        }
+
+        return $rules;
     }
 
     protected function buildPayloadForNestedDataExpansion(string $className): array
@@ -98,13 +142,15 @@ class GetFromLaravelDataBase extends Strategy
                 continue;
             }
 
+            $paramName = $param->getName();
+            $fieldName = Str::snake($paramName);
             if ($type->isBuiltin()) {
                 $collectionOf = $this->getDataCollectionOfClass($param);
                 if ($collectionOf) {
                     $visited = [$className => true, $collectionOf->getName() => true];
-                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, $visited)];
+                    $payload[$fieldName] = [$this->buildNestedDataStub($collectionOf, $visited)];
                 } else {
-                    $payload[Str::snake($param->getName())] = null;
+                    $payload[$fieldName] = null;
                 }
                 continue;
             }
@@ -117,12 +163,14 @@ class GetFromLaravelDataBase extends Strategy
 
             if ($typeReflection->isSubclassOf(Data::class)) {
                 $visited = [$className => true, $typeName => true];
-                $payload[Str::snake($param->getName())] = $this->buildNestedDataStub($typeReflection, $visited);
+                $payload[$fieldName] = $this->buildNestedDataStub($typeReflection, $visited);
             } else {
                 $collectionOf = $this->getDataCollectionOfClass($param);
                 if ($collectionOf) {
                     $visited = [$className => true, $collectionOf->getName() => true];
-                    $payload[Str::snake($param->getName())] = [$this->buildNestedDataStub($collectionOf, $visited)];
+                    $payload[$fieldName] = [$this->buildNestedDataStub($collectionOf, $visited)];
+                } else {
+                    $payload[$fieldName] = null;
                 }
             }
         }
@@ -256,6 +304,10 @@ class GetFromLaravelDataBase extends Strategy
                 continue;
             }
 
+            if ($fieldRules instanceof NestedRules) {
+                continue;
+            }
+
             if (!is_array($fieldRules)) {
                 $normalized[$field] = [$fieldRules];
                 continue;
@@ -264,7 +316,12 @@ class GetFromLaravelDataBase extends Strategy
             $normalizedFieldRules = [];
 
             foreach ($fieldRules as $rule) {
-                if (is_string($rule)) {
+                if (
+                    is_string($rule) ||
+                    $rule instanceof EnumRule ||
+                    $rule instanceof Rule ||
+                    $rule instanceof ValidationRule
+                ) {
                     $normalizedFieldRules[] = $rule;
                 } elseif (is_object($rule) && method_exists($rule, '__toString')) {
                     $normalizedFieldRules[] = (string) $rule;
