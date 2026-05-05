@@ -2,16 +2,22 @@
 
 use AjCastro\ScribeTdd\Strategies\GetFromLaravelDataBase;
 use Illuminate\Contracts\Validation\ValidationRule;
+use Illuminate\Validation\NestedRules;
+use Illuminate\Validation\Rules\Enum as EnumRule;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Illuminate\Routing\Route;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Spatie\LaravelData\Data;
 use Tests\Fixtures\DataCollectionData;
+use Tests\Fixtures\DeepNestedData;
 use Tests\Fixtures\EmptyData;
+use Tests\Fixtures\FilterItemData;
 use Tests\Fixtures\MixedParamData;
 use Tests\Fixtures\NestedItemData;
 use Tests\Fixtures\OrderData;
+use Tests\Fixtures\ParentWithFiltersData;
 use Tests\Fixtures\SimpleData;
+use Tests\Fixtures\TestFilterType;
 
 beforeEach(function () {
     $this->strategy = new class (new DocumentationConfig(config('scribe') ?? [])) extends GetFromLaravelDataBase {
@@ -173,6 +179,40 @@ describe('normalizeDataRules', function () {
 
         expect($result)->toHaveKey('items.*');
     });
+
+    it('should skip NestedRules instances', function () {
+        $nestedRules = new NestedRules(fn() => ['required', 'string']);
+
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
+            'name' => 'required|string',
+            'items.*' => $nestedRules,
+        ]);
+
+        expect($result)->toHaveKey('name');
+        expect($result)->not->toHaveKey('items.*');
+    });
+
+    it('should preserve Enum rule objects instead of converting to string', function () {
+        $enumRule = new EnumRule(TestFilterType::class);
+
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
+            'type' => ['nullable', $enumRule],
+        ]);
+
+        expect($result['type'][0])->toBe('nullable');
+        expect($result['type'][1])->toBeInstanceOf(EnumRule::class);
+    });
+
+    it('should pass through objects without __toString that are not Rule instances', function () {
+        $rule = new stdClass();
+
+        $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
+            'field' => ['required', $rule],
+        ]);
+
+        expect($result['field'][0])->toBe('required');
+        expect($result['field'][1])->toBe($rule);
+    });
 });
 
 describe('buildPayloadForNestedDataExpansion', function () {
@@ -212,6 +252,13 @@ describe('buildPayloadForNestedDataExpansion', function () {
         $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', SimpleData::class);
 
         expect($result)->toBe(['name' => null, 'quantity' => null]);
+    });
+
+    it('should include enum typed parameters as null in payload', function () {
+        $result = invokeStrategy($this->strategy, 'buildPayloadForNestedDataExpansion', FilterItemData::class);
+
+        expect($result)->toHaveKey('type');
+        expect($result['type'])->toBeNull();
     });
 
     it('includes builtin types and skips union type parameters', function () {
@@ -289,6 +336,14 @@ describe('getRouteValidationRules', function () {
         expect($result)->toHaveKey('name');
         expect($result)->toHaveKey('address.street');
         expect($result)->toHaveKey('address.city');
+    });
+
+    it('should include nested DataCollectionOf DTO rules in expanded rules', function () {
+        $result = invokeStrategy($this->strategy, 'getRouteValidationRules', ParentWithFiltersData::class);
+
+        expect($result)->toHaveKey('filters.*.tags');
+        expect($result)->toHaveKey('filters.*.type');
+        expect($result)->toHaveKey('filters.*.tags.*');
     });
 });
 
@@ -563,5 +618,82 @@ describe('__invoke', function () {
         $result = $rejectingStrategy->__invoke($endpoint);
 
         expect($result)->toBe([]);
+    });
+
+    it('should extract nested DataCollectionOf parameters with enum fields', function () {
+        $controller = new class {
+            public function handle(ParentWithFiltersData $data)
+            {
+            }
+        };
+        $endpoint = makeEndpointForController($controller, 'handle', 'parent-filters');
+
+        $result = $this->strategy->__invoke($endpoint);
+
+        expect($result)->toHaveKey('filters');
+        expect($result['filters']['type'])->toBe('object[]');
+        expect($result)->toHaveKey('filters[].tags');
+        expect($result)->toHaveKey('filters[].type');
+        expect($result['filters[].type']['type'])->toBe('string');
+    });
+});
+
+describe('expandNestedDataCollectionRules', function () {
+    it('should return rules unchanged when no DataCollectionOf exists', function () {
+        $rules = ['name' => ['required', 'string'], 'quantity' => ['required', 'integer']];
+
+        $result = invokeStrategy($this->strategy, 'expandNestedDataCollectionRules', SimpleData::class, $rules);
+
+        expect($result)->toBe($rules);
+    });
+
+    it('should return rules unchanged when class has no constructor', function () {
+        $rules = ['field' => ['required']];
+
+        $result = invokeStrategy($this->strategy, 'expandNestedDataCollectionRules', 'stdClass', $rules);
+
+        expect($result)->toBe($rules);
+    });
+
+    it('should expand nested DTO rules with field prefix', function () {
+        $rules = ['customer_name' => ['required', 'string'], 'items' => ['array']];
+
+        $result = invokeStrategy($this->strategy, 'expandNestedDataCollectionRules', OrderData::class, $rules);
+
+        expect($result)->toHaveKey('items.*.sku');
+        expect($result)->toHaveKey('items.*.qty');
+    });
+
+    it('should not overwrite existing prefixed rules', function () {
+        $customRule = ['required', 'string', 'max:100'];
+        $rules = ['customer_name' => ['required', 'string'], 'items' => ['array'], 'items.*.sku' => $customRule];
+
+        $result = invokeStrategy($this->strategy, 'expandNestedDataCollectionRules', OrderData::class, $rules);
+
+        expect($result['items.*.sku'])->toBe($customRule);
+    });
+
+    it('should expand rules for DTO with enum fields', function () {
+        $rules = ['name' => ['required', 'string'], 'filters' => ['array']];
+
+        $result = invokeStrategy(
+            $this->strategy,
+            'expandNestedDataCollectionRules',
+            ParentWithFiltersData::class,
+            $rules
+        );
+
+        expect($result)->toHaveKey('filters.*.tags');
+        expect($result)->toHaveKey('filters.*.type');
+        expect($result)->toHaveKey('filters.*.tags.*');
+    });
+
+    it('should expand multi-level nested rules', function () {
+        $rules = ['title' => ['required', 'string'], 'sections' => ['array']];
+
+        $result = invokeStrategy($this->strategy, 'expandNestedDataCollectionRules', DeepNestedData::class, $rules);
+
+        expect($result)->toHaveKey('sections.*.label');
+        expect($result)->toHaveKey('sections.*.detail');
     });
 });
