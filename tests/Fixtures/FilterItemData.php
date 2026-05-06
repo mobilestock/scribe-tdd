@@ -17,7 +17,7 @@ class FilterItemData extends Data
     ) {
     }
 
-    public static function rules(?ValidationContext $context = null): array
+    public static function rules(?ValidationContext $_ = null): array
     {
         return [
             'tags.*' => ['nullable', 'string'],
