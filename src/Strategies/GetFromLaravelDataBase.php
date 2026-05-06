@@ -2,11 +2,10 @@
 
 namespace AjCastro\ScribeTdd\Strategies;
 
-use Illuminate\Contracts\Validation\Rule;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Support\Str;
 use Illuminate\Validation\NestedRules;
-use Illuminate\Validation\Rules\Enum as EnumRule;
+use Illuminate\Validation\Rules\Enum;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\ParsesValidationRules;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
@@ -316,12 +315,7 @@ class GetFromLaravelDataBase extends Strategy
             $normalizedFieldRules = [];
 
             foreach ($fieldRules as $rule) {
-                if (
-                    is_string($rule) ||
-                    $rule instanceof EnumRule ||
-                    $rule instanceof Rule ||
-                    $rule instanceof ValidationRule
-                ) {
+                if (is_string($rule) || $rule instanceof Enum || $rule instanceof ValidationRule) {
                     $normalizedFieldRules[] = $rule;
                 } elseif (is_object($rule) && method_exists($rule, '__toString')) {
                     $normalizedFieldRules[] = (string) $rule;

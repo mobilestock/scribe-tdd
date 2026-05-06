@@ -3,7 +3,7 @@
 use AjCastro\ScribeTdd\Strategies\GetFromLaravelDataBase;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\NestedRules;
-use Illuminate\Validation\Rules\Enum as EnumRule;
+use Illuminate\Validation\Rules\Enum;
 use Knuckles\Scribe\Tools\DocumentationConfig;
 use Illuminate\Routing\Route;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
@@ -193,14 +193,14 @@ describe('normalizeDataRules', function () {
     });
 
     it('should preserve Enum rule objects instead of converting to string', function () {
-        $enumRule = new EnumRule(TestFilterType::class);
+        $enumRule = new Enum(TestFilterType::class);
 
         $result = invokeStrategy($this->strategy, 'normalizeDataRules', [
             'type' => ['nullable', $enumRule],
         ]);
 
         expect($result['type'][0])->toBe('nullable');
-        expect($result['type'][1])->toBeInstanceOf(EnumRule::class);
+        expect($result['type'][1])->toBeInstanceOf(Enum::class);
     });
 
     it('should pass through objects without __toString that are not Rule instances', function () {
