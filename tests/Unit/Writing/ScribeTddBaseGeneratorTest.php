@@ -138,6 +138,41 @@ describe('generateResponseContentSpec', function () {
         expect($schema['items']['properties']['active']['type'])->toBe('boolean');
     });
 
+    it('should expand array of array items with properties from example data', function () {
+        $endpoint = makeOutputEndpointData([
+            'uri' => 'test',
+            'httpMethods' => ['GET'],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'content' =>
+                        '[[{"id":1,"name":"Test1","ages":{"min":7,"max":35}}],[{"id":2,"name":"Test2","ages":{"min":10,"max":30}}]]',
+                    'headers' => ['Content-Type' => ['application/json']],
+                    'description' => '',
+                ],
+            ],
+        ]);
+
+        $reflection = new ReflectionMethod($this->generator, 'generateResponseContentSpec');
+        $result = $reflection->invoke(
+            $this->generator,
+            '[[{"id":1,"name":"Test1","ages":{"min":7,"max":35}}],[{"id":2,"name":"Test2","ages":{"min":10,"max":30}}]]',
+            $endpoint
+        );
+
+        $schema = $result['application/json']['schema'];
+
+        expect($schema['type'])->toBe('array');
+        expect($schema['items']['type'])->toBe('array');
+        expect($schema['items']['items'])->toBeArray();
+        expect($schema['items']['items']['type'])->toBe('object');
+        expect($schema['items']['items']['properties']['id']['type'])->toBe('integer');
+        expect($schema['items']['items']['properties']['name']['type'])->toBe('string');
+        expect($schema['items']['items']['properties']['ages']['type'])->toBe('object');
+        expect($schema['items']['items']['properties']['ages']['properties']['min']['type'])->toBe('integer');
+        expect($schema['items']['items']['properties']['ages']['properties']['max']['type'])->toBe('integer');
+    });
+
     it('should return non-JSON responses unchanged', function () {
         $endpoint = makeOutputEndpointData([
             'uri' => 'test',
