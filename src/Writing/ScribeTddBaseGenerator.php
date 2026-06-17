@@ -23,15 +23,9 @@ class ScribeTddBaseGenerator extends BaseGenerator
         }
 
         $result = parent::generateResponseContentSpec($responseContent, $endpoint);
+        $schema = $result['application/json']['schema'] ?? null;
 
-        if (!isset($result['application/json']['schema'])) {
-            return $result;
-        }
-
-        $schema = $result['application/json']['schema'];
-        $isArraySchema = ($schema['type'] ?? '') === 'array';
-
-        if (!$isArraySchema) {
+        if (!is_array($schema) || ($schema['type'] ?? null) !== 'array') {
             return $result;
         }
 
