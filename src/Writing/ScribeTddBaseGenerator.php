@@ -34,16 +34,18 @@ class ScribeTddBaseGenerator extends BaseGenerator
         if (!$isArraySchema) {
             return $result;
         }
+
+        $schemaItemsType = $schema['items']['type'] ?? '';
         $schemaExample = $schema['example'] ?? null;
         $firstSchemaExample = is_array($schemaExample) ? $schemaExample[0] ?? null : null;
 
         $isExpandableArrayOfObjects =
-            ($schema['items']['type'] ?? '') === 'object' &&
+            $schemaItemsType === 'object' &&
             empty($schema['items']['properties']) &&
             $firstSchemaExample instanceof \stdClass;
 
         $isExpandableArrayOfArrays =
-            ($schema['items']['type'] ?? '') === 'array' &&
+            $schemaItemsType === 'array' &&
             empty($schema['items']['items']) &&
             is_array($firstSchemaExample) &&
             ($firstSchemaExample[0] ?? null) instanceof \stdClass;
