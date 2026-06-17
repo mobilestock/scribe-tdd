@@ -29,8 +29,11 @@ class ScribeTddBaseGenerator extends BaseGenerator
         }
 
         $schema = $result['application/json']['schema'];
-
         $isArraySchema = ($schema['type'] ?? '') === 'array';
+
+        if (!$isArraySchema) {
+            return $result;
+        }
         $schemaExample = $schema['example'] ?? null;
         $firstSchemaExample = is_array($schemaExample) ? $schemaExample[0] ?? null : null;
 
