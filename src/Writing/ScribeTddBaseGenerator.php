@@ -46,7 +46,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
 
         $isExpandableArrayOfArrays =
             $schemaItemsType === 'array' &&
-            empty($schema['items']['items']) &&
+            empty($schema['items']['items']['properties']) &&
             is_array($firstSchemaExample) &&
             ($firstSchemaExample[0] ?? null) instanceof \stdClass;
 
