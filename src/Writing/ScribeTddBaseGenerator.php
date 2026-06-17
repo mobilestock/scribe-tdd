@@ -45,7 +45,7 @@ class ScribeTddBaseGenerator extends BaseGenerator
             is_array($firstSchemaExample) &&
             ($firstSchemaExample[0] ?? null) instanceof \stdClass;
 
-        if ($isArraySchema && ($isExpandableArrayOfObjects || $isExpandableArrayOfArrays)) {
+        if ($isExpandableArrayOfObjects || $isExpandableArrayOfArrays) {
             $result['application/json']['schema']['items'] = $this->generateSchemaForResponseValue(
                 $firstSchemaExample,
                 $endpoint,
