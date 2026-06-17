@@ -30,16 +30,24 @@ class ScribeTddBaseGenerator extends BaseGenerator
 
         $schema = $result['application/json']['schema'];
 
+        $isArraySchema = ($schema['type'] ?? '') === 'array';
+        $schemaExample = $schema['example'] ?? null;
+        $firstSchemaExample = is_array($schemaExample) ? $schemaExample[0] ?? null : null;
+
         $isExpandableArrayOfObjects =
-            ($schema['type'] ?? '') === 'array' &&
             ($schema['items']['type'] ?? '') === 'object' &&
             empty($schema['items']['properties']) &&
-            is_array($schema['example'] ?? null) &&
-            ($schema['example'][0] ?? null) instanceof \stdClass;
+            $firstSchemaExample instanceof \stdClass;
 
-        if ($isExpandableArrayOfObjects) {
+        $isExpandableArrayOfArrays =
+            ($schema['items']['type'] ?? '') === 'array' &&
+            empty($schema['items']['items']) &&
+            is_array($firstSchemaExample) &&
+            ($firstSchemaExample[0] ?? null) instanceof \stdClass;
+
+        if ($isArraySchema && ($isExpandableArrayOfObjects || $isExpandableArrayOfArrays)) {
             $result['application/json']['schema']['items'] = $this->generateSchemaForResponseValue(
-                $schema['example'][0],
+                $firstSchemaExample,
                 $endpoint,
                 ''
             );
