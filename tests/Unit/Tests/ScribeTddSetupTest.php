@@ -270,16 +270,17 @@ describe('setUpScribeTdd', function () {
 });
 
 describe('writeExample', function () {
-    it('writes example data to storage', function () {
+    it('writes one complete example file to storage', function () {
         $route = new Route(['POST'], 'write-test', fn() => null);
         $route->bind(Request::create('/write-test'));
+        File::deleteDirectory(ExampleCreator::writeDir($route));
 
         $test = Mockery::mock(TestCase::class);
         $instance = new ExampleCreator([
             'test' => $test,
             'testMethod' => 'test_write',
             'dataName' => '',
-            'providedData' => [],
+            'providedData' => [30.0],
             'description' => 'test write',
         ]);
         ExampleCreator::setCurrentInstance($instance);
@@ -299,9 +300,63 @@ describe('writeExample', function () {
         $reflection->invoke($trait);
 
         $dir = ExampleCreator::writeDir($route);
-        expect(File::isDirectory($dir))->toBeTrue();
+        $writtenData = json_decode(File::get($instance->writePath()), true);
+
+        expect(File::files($dir))
+            ->toHaveCount(1)
+            ->and($writtenData)
+            ->toEqual($instance->toArray())
+            ->toHaveKeys(['url_params', 'query_params', 'body_params', 'responses']);
+
+        $response->headers->set('Date', 'Wed, 29 Jul 2026 20:30:38 GMT');
+        $response->setContent('{"ok":false}');
+        ExampleCreator::setCurrentInstance($instance);
+        ExampleCreator::getInstanceForRoute($route);
+        $reflection->invoke($trait);
+
+        expect(json_decode(File::get($instance->writePath()), true))->toBe($writtenData);
 
         File::deleteDirectory($dir);
+    });
+
+    it('rewrites an example when its structure changes', function () {
+        $route = new Route(['POST'], 'write-structure-test', fn() => null);
+        $route->bind(Request::create('/write-structure-test'));
+        File::deleteDirectory(ExampleCreator::writeDir($route));
+
+        $test = Mockery::mock(TestCase::class);
+        $instance = new ExampleCreator([
+            'test' => $test,
+            'testMethod' => 'test_write_structure',
+            'dataName' => '',
+            'providedData' => [],
+            'description' => 'test write structure',
+        ]);
+        ExampleCreator::setCurrentInstance($instance);
+        ExampleCreator::getInstanceForRoute($route);
+
+        $request = Request::create('/write-structure-test', 'POST');
+        $request->setRouteResolver(fn() => $route);
+        $instance->addExampleRequest(new ExampleRequest($request, new Response('{"id":1}', 200), $instance));
+
+        $trait = new class {
+            use ScribeTddSetup;
+        };
+        $reflection = new ReflectionMethod($trait, 'writeExample');
+        $reflection->invoke($trait);
+
+        $initialData = json_decode(File::get($instance->writePath()), true);
+        $initialData['responses'][0]['content'] = '{"id":1,"name":"Product"}';
+        File::put($instance->writePath(), json_encode($initialData, JSON_PRETTY_PRINT));
+
+        ExampleCreator::setCurrentInstance($instance);
+        ExampleCreator::getInstanceForRoute($route);
+        $reflection->invoke($trait);
+
+        expect(json_decode(File::get($instance->writePath()), true)['responses'][0]['content'])
+            ->toBe('{"id":1}');
+
+        File::deleteDirectory(ExampleCreator::writeDir($route));
     });
 });
 

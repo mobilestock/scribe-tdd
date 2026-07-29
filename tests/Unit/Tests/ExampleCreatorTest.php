@@ -239,7 +239,7 @@ describe('toJson', function () {
 });
 
 describe('getWritables', function () {
-    it('returns keyed array of writable files', function () {
+    it('returns one writable file containing the complete route example', function () {
         $route = new Route(['POST'], 'items', fn() => null);
         $route->bind(Request::create('/items'));
 
@@ -263,12 +263,20 @@ describe('getWritables', function () {
 
         $writables = $instance->getWritables();
 
-        expect($writables)->toHaveCount(5);
-        expect(array_keys($writables)[0])->toContain('00-extra-');
-        expect(array_keys($writables)[1])->toContain('01-url_params-');
-        expect(array_keys($writables)[2])->toContain('02-query_params-');
-        expect(array_keys($writables)[3])->toContain('03-body_params-');
-        expect(array_keys($writables)[4])->toContain('04-responses-');
+        expect($writables)
+            ->toHaveCount(1)
+            ->toHaveKey($instance->id . '.json')
+            ->and($writables[$instance->id . '.json'])
+            ->toBe($instance->toArray())
+            ->toHaveKeys([
+                'id',
+                'test_class',
+                'test_method',
+                'url_params',
+                'query_params',
+                'body_params',
+                'responses',
+            ]);
     });
 });
 
