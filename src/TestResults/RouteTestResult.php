@@ -5,6 +5,8 @@ namespace AjCastro\ScribeTdd\TestResults;
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\File;
+use Knuckles\Scribe\Extracting\RouteDocBlocker;
+use Mpociot\Reflection\DocBlock;
 
 class RouteTestResult
 {
@@ -28,7 +30,9 @@ class RouteTestResult
     {
         $result = [
             'test_class' => '',
+            'test_class_docblock' => null,
             'test_method' => '',
+            'test_method_docblock' => null,
             'url_params' => [],
             'query_params' => [],
             'body_params' => [],
@@ -42,7 +46,9 @@ class RouteTestResult
             $array = static::decodeFile($file->getPathname());
 
             $result['test_class'] = $array['test_class'] ?? $result['test_class'];
+            $result['test_class_docblock'] = $array['test_class_docblock'] ?? $result['test_class_docblock'];
             $result['test_method'] = $array['test_method'] ?? $result['test_method'];
+            $result['test_method_docblock'] = $array['test_method_docblock'] ?? $result['test_method_docblock'];
 
             $result['url_params'] = $result['url_params'] + ($array['url_params'] ?? []);
             $result['query_params'] = $result['query_params'] + ($array['query_params'] ?? []);
@@ -58,6 +64,29 @@ class RouteTestResult
         }
 
         return $result;
+    }
+
+    public static function getTestDocBlocks(Route $route, array $testResult): array
+    {
+        if (($testResult['test_method_docblock'] ?? null) !== null
+            || ($testResult['test_class_docblock'] ?? null) !== null) {
+            return [
+                'method' => new DocBlock($testResult['test_method_docblock'] ?? ''),
+                'class' => new DocBlock($testResult['test_class_docblock'] ?? ''),
+            ];
+        }
+
+        $testClass = $testResult['test_class'];
+        $testMethod = $testResult['test_method'];
+
+        if (class_exists($testClass) && method_exists($testClass, $testMethod)) {
+            return RouteDocBlocker::getDocBlocks($route, [$testClass, $testMethod]);
+        }
+
+        return [
+            'method' => new DocBlock(''),
+            'class' => new DocBlock(''),
+        ];
     }
 
     public static function decodeFile($filepath)

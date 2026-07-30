@@ -5,7 +5,6 @@ namespace AjCastro\ScribeTdd\Strategies\QueryParameters;
 use AjCastro\ScribeTdd\TestResults\RouteTestResult;
 use Knuckles\Camel\Extraction\ExtractedEndpointData;
 use Knuckles\Scribe\Extracting\ParamHelpers;
-use Knuckles\Scribe\Extracting\RouteDocBlocker;
 use Knuckles\Scribe\Extracting\Strategies\Strategy;
 
 class AddPaginationParametersFromScribeTdd extends Strategy
@@ -23,10 +22,7 @@ class AddPaginationParametersFromScribeTdd extends Strategy
         [
             'method' => $methodDocBlock,
         ]
-        = RouteDocBlocker::getDocBlocks($endpointData->route, [
-            $testResult['test_class'],
-            $testResult['test_method'],
-        ]);
+        = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
 
         $tags = $methodDocBlock->getTagsByName('usesPagination');
 

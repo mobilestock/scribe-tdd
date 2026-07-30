@@ -6,6 +6,7 @@ use AjCastro\ScribeTdd\Tests\Traits\SetProps;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Contracts\Support\Jsonable;
 use Illuminate\Routing\Route;
+use ReflectionClass;
 
 class ExampleCreator implements Arrayable, Jsonable
 {
@@ -13,7 +14,9 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public $id;
     public $testClass;
+    public $testClassDocBlock;
     public $testMethod;
+    public $testMethodDocBlock;
     public $dataName;
     public $providedData;
     public $description;
@@ -30,6 +33,11 @@ class ExampleCreator implements Arrayable, Jsonable
     {
         $this->setProps($props);
         $this->testClass = get_class($this->test);
+        $reflection = new ReflectionClass($this->test);
+        $this->testClassDocBlock = $reflection->getDocComment() ?: '';
+        $this->testMethodDocBlock = $reflection->hasMethod($this->testMethod)
+            ? ($reflection->getMethod($this->testMethod)->getDocComment() ?: '')
+            : '';
         $this->id = static::makeId($this);
     }
 
@@ -138,7 +146,9 @@ class ExampleCreator implements Arrayable, Jsonable
         return [
             'id' => $this->id,
             'test_class' => $this->testClass,
+            'test_class_docblock' => $this->testClassDocBlock,
             'test_method' => $this->testMethod,
+            'test_method_docblock' => $this->testMethodDocBlock,
             'data_name' => $this->dataName,
             'provided_data' => $this->providedData,
             'description' => $this->description,
