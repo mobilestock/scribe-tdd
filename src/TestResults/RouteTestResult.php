@@ -66,6 +66,15 @@ class RouteTestResult
         return $result;
     }
 
+    /**
+     * @param array{
+     *     test_class: string,
+     *     test_class_docblock?: string|null,
+     *     test_method: string,
+     *     test_method_docblock?: string|null
+     * } $testResult
+     * @return array{method: DocBlock, class: DocBlock}
+     */
     public static function getTestDocBlocks(Route $route, array $testResult): array
     {
         if (($testResult['test_method_docblock'] ?? null) !== null
