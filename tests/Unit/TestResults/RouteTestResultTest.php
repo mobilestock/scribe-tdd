@@ -182,6 +182,36 @@ describe('getTestResultForRoute', function () {
     });
 });
 
+describe('getTestDocBlocks', function () {
+    it('loads persisted docblocks without the test class', function () {
+        $route = new Illuminate\Routing\Route(['GET'], 'docblock-test', fn() => null);
+        $testResult = [
+            'test_class' => 'P\\Tests\\MissingTest',
+            'test_class_docblock' => "/**\n * @group Items\n */",
+            'test_method' => '__pest_evaluable_test',
+            'test_method_docblock' => "/**\n * @urlParam id integer required The item ID.\n */",
+        ];
+
+        $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
+
+        expect($docBlocks['class']->getTagsByName('group'))->toHaveCount(1)
+            ->and($docBlocks['method']->getTagsByName('urlParam'))->toHaveCount(1);
+    });
+
+    it('returns empty docblocks for legacy manifests with an unavailable test class', function () {
+        $route = new Illuminate\Routing\Route(['GET'], 'legacy-docblock-test', fn() => null);
+        $testResult = [
+            'test_class' => 'P\\Tests\\MissingTest',
+            'test_method' => '__pest_evaluable_test',
+        ];
+
+        $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
+
+        expect($docBlocks['class']->getTags())->toBeEmpty()
+            ->and($docBlocks['method']->getTags())->toBeEmpty();
+    });
+});
+
 describe('decodeFile', function () {
     it('decodes JSON file to array', function () {
         $path = storage_path('scribe-tdd/test-decode.json');

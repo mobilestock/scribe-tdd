@@ -118,6 +118,25 @@ describe('flushInstances', function () {
 });
 
 describe('makeId', function () {
+    it('captures the test method docblock for later generation', function () {
+        $test = new class {
+            /** @urlParam id integer required The item ID. */
+            public function test_example(): void
+            {
+            }
+        };
+
+        $instance = new ExampleCreator([
+            'test' => $test,
+            'testMethod' => 'test_example',
+            'dataName' => '',
+            'providedData' => [],
+            'description' => 'test',
+        ]);
+
+        expect($instance->testMethodDocBlock)->toContain('@urlParam id');
+    });
+
     it('creates id from class, method and dataName', function () {
         $test = Mockery::mock(Illuminate\Foundation\Testing\TestCase::class);
         $instance = new ExampleCreator([
@@ -271,7 +290,9 @@ describe('getWritables', function () {
             ->toHaveKeys([
                 'id',
                 'test_class',
+                'test_class_docblock',
                 'test_method',
+                'test_method_docblock',
                 'url_params',
                 'query_params',
                 'body_params',
