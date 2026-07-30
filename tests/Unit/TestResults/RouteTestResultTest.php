@@ -210,6 +210,25 @@ describe('getTestDocBlocks', function () {
         expect($docBlocks['class']->getTags())->toBeEmpty()
             ->and($docBlocks['method']->getTags())->toBeEmpty();
     });
+
+    it('loads legacy method docblocks when the test class has no docblock', function () {
+        $test = new class {
+            /** @urlParam id integer required The item ID. */
+            public function test_example(): void
+            {
+            }
+        };
+        $route = new Illuminate\Routing\Route(['GET'], 'legacy-reflection-test', fn() => null);
+        $testResult = [
+            'test_class' => get_class($test),
+            'test_method' => 'test_example',
+        ];
+
+        $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
+
+        expect($docBlocks['class']?->getTags() ?: [])->toBeEmpty()
+            ->and($docBlocks['method']->getTagsByName('urlParam'))->toHaveCount(1);
+    });
 });
 
 describe('decodeFile', function () {
