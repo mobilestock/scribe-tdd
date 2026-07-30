@@ -121,7 +121,13 @@ trait ScribeTddSetup
             return $value;
         }
 
-        return array_map(fn($item, $itemKey) => $this->structureOf($item, (string) $itemKey), $value, array_keys($value));
+        $structure = [];
+
+        foreach ($value as $itemKey => $item) {
+            $structure[$itemKey] = $this->structureOf($item, (string) $itemKey);
+        }
+
+        return $structure;
     }
 
     private function valueShape(mixed $value): mixed

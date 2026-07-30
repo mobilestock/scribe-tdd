@@ -335,7 +335,7 @@ describe('writeExample', function () {
         ExampleCreator::setCurrentInstance($instance);
         ExampleCreator::getInstanceForRoute($route);
 
-        $request = Request::create('/write-structure-test', 'POST');
+        $request = Request::create('/write-structure-test', 'POST', ['name' => 'Product']);
         $request->setRouteResolver(fn() => $route);
         $instance->addExampleRequest(new ExampleRequest($request, new Response('{"id":1}', 200), $instance));
 
@@ -346,15 +346,17 @@ describe('writeExample', function () {
         $reflection->invoke($trait);
 
         $initialData = json_decode(File::get($instance->writePath()), true);
-        $initialData['responses'][0]['content'] = '{"id":1,"name":"Product"}';
+        $initialData['body_params']['title'] = $initialData['body_params']['name'];
+        unset($initialData['body_params']['name']);
         File::put($instance->writePath(), json_encode($initialData, JSON_PRETTY_PRINT));
 
         ExampleCreator::setCurrentInstance($instance);
         ExampleCreator::getInstanceForRoute($route);
         $reflection->invoke($trait);
 
-        expect(json_decode(File::get($instance->writePath()), true)['responses'][0]['content'])
-            ->toBe('{"id":1}');
+        expect(json_decode(File::get($instance->writePath()), true)['body_params'])
+            ->toHaveKey('name')
+            ->not->toHaveKey('title');
 
         File::deleteDirectory(ExampleCreator::writeDir($route));
     });
