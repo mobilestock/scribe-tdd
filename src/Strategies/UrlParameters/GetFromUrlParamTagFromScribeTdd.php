@@ -22,6 +22,6 @@ class GetFromUrlParamTagFromScribeTdd extends GetFromUrlParamTag
         ]
         = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
     
-        return $this->getFromTags($methodDocBlock->getTags(), $classDocBlock?->getTags() ?: []);
+        return $this->getFromTags($methodDocBlock->getTags(), $classDocBlock->getTags());
     }
 }

@@ -14,9 +14,9 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public $id;
     public $testClass;
-    public $testClassDocBlock;
+    public string $testClassDocBlock;
     public $testMethod;
-    public $testMethodDocBlock;
+    public string $testMethodDocBlock;
     public $dataName;
     public $providedData;
     public $description;
@@ -32,11 +32,16 @@ class ExampleCreator implements Arrayable, Jsonable
     public function __construct(array $props)
     {
         $this->setProps($props);
-        $this->testClass = get_class($this->test);
-        $reflection = new ReflectionClass($this->test);
+        /** @var object $test */
+        $test = $this->test;
+        /** @var string $testMethod */
+        $testMethod = $this->testMethod;
+
+        $this->testClass = get_class($test);
+        $reflection = new ReflectionClass($test);
         $this->testClassDocBlock = $reflection->getDocComment() ?: '';
-        $this->testMethodDocBlock = $reflection->hasMethod($this->testMethod)
-            ? ($reflection->getMethod($this->testMethod)->getDocComment() ?: '')
+        $this->testMethodDocBlock = $reflection->hasMethod($testMethod)
+            ? ($reflection->getMethod($testMethod)->getDocComment() ?: '')
             : '';
         $this->id = static::makeId($this);
     }
