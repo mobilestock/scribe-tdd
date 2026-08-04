@@ -19,8 +19,7 @@ class GetFromDocBlocksFromScribeTdd extends GetFromDocBlocks
         [
             'method' => $methodDocBlock,
             'class' => $classDocBlock,
-        ]
-        = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
+        ] = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
 
         return $this->getMetadataFromDocBlock($methodDocBlock, $classDocBlock);
     }

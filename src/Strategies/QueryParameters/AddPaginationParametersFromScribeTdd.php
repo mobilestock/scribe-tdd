@@ -21,8 +21,7 @@ class AddPaginationParametersFromScribeTdd extends Strategy
 
         [
             'method' => $methodDocBlock,
-        ]
-        = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
+        ] = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
 
         $tags = $methodDocBlock->getTagsByName('usesPagination');
 

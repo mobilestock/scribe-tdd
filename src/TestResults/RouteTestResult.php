@@ -77,8 +77,10 @@ class RouteTestResult
      */
     public static function getTestDocBlocks(Route $route, array $testResult): array
     {
-        if (($testResult['test_method_docblock'] ?? null) !== null
-            || ($testResult['test_class_docblock'] ?? null) !== null) {
+        if (
+            ($testResult['test_method_docblock'] ?? null) !== null ||
+            ($testResult['test_class_docblock'] ?? null) !== null
+        ) {
             return [
                 'method' => new DocBlock($testResult['test_method_docblock'] ?? ''),
                 'class' => new DocBlock($testResult['test_class_docblock'] ?? ''),

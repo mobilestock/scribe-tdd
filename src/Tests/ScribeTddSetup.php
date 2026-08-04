@@ -95,8 +95,7 @@ trait ScribeTddSetup
         $existingData = json_decode(File::get($path), true);
         $serializedData = json_decode(json_encode($data), true);
 
-        return is_array($existingData)
-            && $this->structureOf($existingData) === $this->structureOf($serializedData);
+        return is_array($existingData) && $this->structureOf($existingData) === $this->structureOf($serializedData);
     }
 
     private function structureOf(mixed $value, ?string $key = null): mixed
@@ -112,9 +111,7 @@ trait ScribeTddSetup
         if ($key === 'content' && is_string($value)) {
             $decoded = json_decode($value, true);
 
-            return json_last_error() === JSON_ERROR_NONE
-                ? $this->valueShape($decoded)
-                : get_debug_type($value);
+            return json_last_error() === JSON_ERROR_NONE ? $this->valueShape($decoded) : get_debug_type($value);
         }
 
         if (!is_array($value)) {
@@ -137,10 +134,7 @@ trait ScribeTddSetup
         }
 
         if (array_is_list($value)) {
-            return array_values(array_unique(array_map(
-                fn($item) => json_encode($this->valueShape($item)),
-                $value,
-            )));
+            return array_values(array_unique(array_map(fn($item) => json_encode($this->valueShape($item)), $value)));
         }
 
         return array_map(fn($item) => $this->valueShape($item), $value);

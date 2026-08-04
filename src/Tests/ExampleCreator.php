@@ -41,7 +41,8 @@ class ExampleCreator implements Arrayable, Jsonable
         $reflection = new ReflectionClass($test);
         $this->testClassDocBlock = $reflection->getDocComment() ?: '';
         $this->testMethodDocBlock = $reflection->hasMethod($testMethod)
-            ? ($reflection->getMethod($testMethod)->getDocComment() ?: '')
+            ? ($reflection->getMethod($testMethod)->getDocComment() ?:
+            '')
             : '';
         $this->id = static::makeId($this);
     }

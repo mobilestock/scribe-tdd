@@ -18,8 +18,7 @@ class UseResponseTagFromScribeTdd extends UseResponseTag
 
         [
             'method' => $methodDocBlock,
-        ]
-        = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
+        ] = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
 
         return $this->getDocBlockResponses($methodDocBlock->getTags());
     }
