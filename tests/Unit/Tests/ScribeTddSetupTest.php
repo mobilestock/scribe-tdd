@@ -10,7 +10,6 @@ use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
-use Knuckles\Scribe\ScribeServiceProvider;
 
 beforeEach(function () {
     ExampleCreator::flushInstances();
@@ -184,20 +183,6 @@ describe('setUpScribeTdd', function () {
                 $this->setUpScribeTdd();
             }
 
-            public static function setShutdownRegistered(bool $value): void
-            {
-                self::$shutdownRegistered = $value;
-            }
-
-            public static function getShutdownRegistered(): bool
-            {
-                return self::$shutdownRegistered;
-            }
-
-            public function triggerScribeGeneration(): void
-            {
-            }
-
             public function afterApplicationCreated(callable $callback)
             {
                 $this->afterCb = $callback;
@@ -228,7 +213,6 @@ describe('setUpScribeTdd', function () {
 
     it('returns early when scribe-tdd is disabled', function () {
         Config::set('scribe-tdd.enabled', false);
-        $this->trait::setShutdownRegistered(true);
 
         $this->trait->callSetUp();
 
@@ -238,8 +222,6 @@ describe('setUpScribeTdd', function () {
     });
 
     it('registers callbacks when enabled', function () {
-        $this->trait::setShutdownRegistered(true);
-
         $this->trait->callSetUp();
 
         expect($this->trait->afterCb)->toBeCallable();
@@ -251,15 +233,6 @@ describe('setUpScribeTdd', function () {
 
         ($this->trait->beforeCb)();
         expect(ExampleCreator::getInstances())->toBeEmpty();
-    });
-
-    it('registers shutdown function when not already registered', function () {
-        unset($_SERVER['LARAVEL_PARALLEL_TESTING']);
-        $this->trait::setShutdownRegistered(false);
-
-        $this->trait->callSetUp();
-
-        expect($this->trait::getShutdownRegistered())->toBeTrue();
     });
 
     it('throws LaravelNotPresent when app is empty', function () {
@@ -359,35 +332,6 @@ describe('writeExample', function () {
             ->not->toHaveKey('title');
 
         File::deleteDirectory(ExampleCreator::writeDir($route));
-    });
-});
-
-describe('triggerScribeGeneration', function () {
-    it('creates application and sets server vars before scribe:generate', function () {
-        $trait = new class {
-            use ScribeTddSetup;
-
-            public bool $applicationCreated = false;
-
-            public function createApplication()
-            {
-                $this->applicationCreated = true;
-                return app();
-            }
-        };
-
-        try {
-            $trait->triggerScribeGeneration();
-        } catch (Throwable) {
-            // scribe:generate may fail in test env - that's fine,
-            // we just need to verify the setup lines executed
-        }
-
-        expect($trait->applicationCreated)->toBeTrue();
-        expect($_SERVER['SCRIBE_TESTS'])->toBeTrue();
-        expect(ScribeServiceProvider::$customTranslationLayerLoaded)->toBeFalse();
-
-        unset($_SERVER['SCRIBE_TESTS']);
     });
 });
 
