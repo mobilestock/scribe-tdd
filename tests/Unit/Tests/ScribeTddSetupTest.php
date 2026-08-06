@@ -274,12 +274,15 @@ describe('writeExample', function () {
 
         $dir = ExampleCreator::writeDir($route);
         $writtenData = json_decode(File::get($instance->writePath()), true);
+        $generatedMarkerPath = $dir . '/.generated/' . basename($instance->writePath());
 
         expect(File::files($dir))
             ->toHaveCount(1)
             ->and($writtenData)
             ->toEqual($instance->toArray())
-            ->toHaveKeys(['url_params', 'query_params', 'body_params', 'responses']);
+            ->toHaveKeys(['url_params', 'query_params', 'body_params', 'responses'])
+            ->and(File::exists($generatedMarkerPath))
+            ->toBeTrue();
 
         $response->headers->set('Date', 'Wed, 29 Jul 2026 20:30:38 GMT');
         $response->setContent('{"ok":false}');
@@ -319,20 +322,156 @@ describe('writeExample', function () {
         $reflection->invoke($trait);
 
         $initialData = json_decode(File::get($instance->writePath()), true);
-        $initialData['body_params']['title'] = $initialData['body_params']['name'];
-        unset($initialData['body_params']['name']);
+        $initialData['responses'][0]['content'] = '{"id":"1a724e6b-9c7e-4aeb-9b42-d34528aa1bbc"}';
         File::put($instance->writePath(), json_encode($initialData, JSON_PRETTY_PRINT));
 
         ExampleCreator::setCurrentInstance($instance);
         ExampleCreator::getInstanceForRoute($route);
         $reflection->invoke($trait);
 
-        expect(json_decode(File::get($instance->writePath()), true)['body_params'])
-            ->toHaveKey('name')
-            ->not->toHaveKey('title');
+        $writtenData = json_decode(File::get($instance->writePath()), true);
+
+        expect(json_decode($writtenData['responses'][0]['content'], true))->toBe(['id' => 1]);
 
         File::deleteDirectory(ExampleCreator::writeDir($route));
     });
+});
+
+describe('hasSameStructure', function () {
+    beforeEach(function () {
+        $this->trait = new class {
+            use ScribeTddSetup;
+
+            public function callHasSameStructure(string $path, array $data): bool
+            {
+                return $this->hasSameStructure($path, $data);
+            }
+        };
+        $this->path = storage_path('framework/testing/scribe-tdd-structure.json');
+        $this->data = [
+            'id' => 'original-id',
+            'description' => 'pest evaluable create returns 200',
+            'body_params' => ['store_id' => 123],
+            'responses' => [[
+                'status' => 200,
+                'headers' => ['date' => ['Wed, 05 Aug 2026 13:04:07 GMT']],
+                'description' => '200, pest evaluable create returns 200',
+                'content' => '{"store_id":123,"active":true}',
+            ]],
+        ];
+        File::put($this->path, json_encode($this->data));
+    });
+
+    afterEach(function () {
+        File::delete($this->path);
+    });
+
+    it('ignores changes outside status, description, and content structure', function () {
+        $newData = $this->data;
+        $newData['id'] = 'new-id';
+        $newData['body_params'] = ['different_parameter' => 'value'];
+        $newData['responses'][0]['headers']['date'] = ['Thu, 06 Aug 2026 13:04:07 GMT'];
+        $newData['responses'][0]['content'] = '{"store_id":456,"active":false}';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('ignores non-JSON content value changes', function () {
+        $existingData = $this->data;
+        $existingData['responses'][0]['content'] = 'original response';
+        File::put($this->path, json_encode($existingData));
+        $newData = $existingData;
+        $newData['responses'][0]['content'] = 'new response';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('ignores values in non-string list content with the same structure', function () {
+        $existingData = $this->data;
+        $existingData['responses'][0]['content'] = [
+            'items' => [
+                ['id' => 1],
+                ['id' => 2],
+            ],
+        ];
+        File::put($this->path, json_encode($existingData));
+        $newData = $existingData;
+        $newData['responses'][0]['content']['items'] = [
+            ['id' => 3],
+        ];
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('ignores numeric object key and list order changes', function () {
+        $existingData = $this->data;
+        $existingData['responses'][0]['content'] = '{"customers":{"58":6},"items":[1,"value"],"price":10}';
+        File::put($this->path, json_encode($existingData));
+        $newData = $existingData;
+        $newData['responses'][0]['content'] = '{"customers":{"52":7},"items":["other",2],"price":10.5}';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('ignores nullable values in otherwise matching list items', function () {
+        $existingData = $this->data;
+        $existingData['responses'][0]['content'] = '[{"delivery_type":"COURIER"}]';
+        File::put($this->path, json_encode($existingData));
+        $newData = $existingData;
+        $newData['responses'][0]['content'] = '[{"delivery_type":"COURIER"},{"delivery_type":null}]';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('detects a response status change', function () {
+        $newData = $this->data;
+        $newData['responses'][0]['status'] = 201;
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeFalse();
+    });
+
+    it('detects a top-level description change', function () {
+        $newData = $this->data;
+        $newData['description'] = 'pest evaluable create returns 201';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeFalse();
+    });
+
+    it('detects a response description change', function () {
+        $newData = $this->data;
+        $newData['responses'][0]['description'] = '201, pest evaluable create returns 201';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeFalse();
+    });
+
+    it('detects content structure changes', function (string $content) {
+        $newData = $this->data;
+        $newData['responses'][0]['content'] = $content;
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeFalse();
+    })->with([
+        'scalar type changes' => ['{"store_id":"1a724e6b-9c7e-4aeb-9b42-d34528aa1bbc","active":true}'],
+        'field names change' => ['{"column1":123,"active":true}'],
+        'object changes to list' => ['[]'],
+    ]);
 });
 
 describe('getName', function () {
