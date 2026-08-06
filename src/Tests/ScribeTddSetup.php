@@ -54,9 +54,6 @@ trait ScribeTddSetup
 
                 foreach ($instance->getWritables() as $filename => $writeData) {
                     $writePath = $writeDir . '/' . $filename;
-                    $generatedMarkerDirectory = $writeDir . '/.generated';
-                    File::makeDirectory($generatedMarkerDirectory, 0755, true, true);
-                    File::put($generatedMarkerDirectory . '/' . $filename, '');
 
                     if ($this->hasSameStructure($writePath, $writeData)) {
                         continue;
@@ -80,106 +77,54 @@ trait ScribeTddSetup
         $serializedData = json_decode(json_encode($data), true);
 
         return is_array($existingData)
-            && $this->structuresMatch(
-                $this->comparisonStructure($existingData),
-                $this->comparisonStructure($serializedData),
-            );
+            && $this->structureOf($existingData) === $this->structureOf($serializedData);
     }
 
-    private function comparisonStructure(array $data): array
+    private function structureOf(mixed $value, ?string $key = null): mixed
     {
-        return [
-            'description' => $data['description'] ?? null,
-            'responses' => array_map(
-                fn(array $response) => [
-                    'status' => $response['status'] ?? null,
-                    'description' => $response['description'] ?? null,
-                    'content' => $this->contentStructure($response['content'] ?? null),
-                ],
-                $data['responses'] ?? [],
-            ),
-        ];
-    }
-
-    private function contentStructure(mixed $content): mixed
-    {
-        if (!is_string($content)) {
-            return $this->valueShape($content);
+        if (in_array($key, ['example', 'provided_data'], true)) {
+            return $this->valueShape($value);
         }
 
-        $decodedContent = json_decode($content, true);
+        if ($key === 'headers' && is_array($value)) {
+            return array_map(fn($header) => $this->valueShape($header), $value);
+        }
 
-        return json_last_error() === JSON_ERROR_NONE
-            ? $this->valueShape($decodedContent)
-            : get_debug_type($content);
+        if ($key === 'content' && is_string($value)) {
+            $decoded = json_decode($value, true);
+
+            return json_last_error() === JSON_ERROR_NONE
+                ? $this->valueShape($decoded)
+                : get_debug_type($value);
+        }
+
+        if (!is_array($value)) {
+            return $value;
+        }
+
+        $structure = [];
+
+        foreach ($value as $itemKey => $item) {
+            $structure[$itemKey] = $this->structureOf($item, (string) $itemKey);
+        }
+
+        return $structure;
     }
 
     private function valueShape(mixed $value): mixed
     {
-        if (is_int($value) || is_float($value)) {
-            return 'number';
-        }
-
         if (!is_array($value)) {
             return get_debug_type($value);
         }
 
         if (array_is_list($value)) {
-            $itemShapes = [];
-
-            foreach ($value as $item) {
-                $shape = $this->valueShape($item);
-                $itemShapes[json_encode($shape)] = $shape;
-            }
-
-            ksort($itemShapes);
-
-            return array_values($itemShapes);
-        }
-
-        $keys = array_keys($value);
-        $hasOnlyNumericKeys = count(array_filter($keys, fn($key) => is_int($key))) === count($keys);
-
-        if ($hasOnlyNumericKeys) {
-            return $this->valueShape(array_values($value));
+            return array_values(array_unique(array_map(
+                fn($item) => json_encode($this->valueShape($item)),
+                $value,
+            )));
         }
 
         return array_map(fn($item) => $this->valueShape($item), $value);
-    }
-
-    private function structuresMatch(mixed $existing, mixed $generated): bool
-    {
-        if ($existing === 'null' || $generated === 'null') {
-            return true;
-        }
-
-        if (!is_array($existing) || !is_array($generated)) {
-            return $existing === $generated;
-        }
-
-        if (array_is_list($existing) !== array_is_list($generated)) {
-            return false;
-        }
-
-        if (array_is_list($existing)) {
-            return collect($existing)->every(
-                fn($shape) => collect($generated)->contains(
-                    fn($generatedShape) => $this->structuresMatch($shape, $generatedShape),
-                ),
-            ) && collect($generated)->every(
-                fn($shape) => collect($existing)->contains(
-                    fn($existingShape) => $this->structuresMatch($existingShape, $shape),
-                ),
-            );
-        }
-
-        if (array_keys($existing) !== array_keys($generated)) {
-            return false;
-        }
-
-        return collect($existing)->every(
-            fn($shape, $key) => $this->structuresMatch($shape, $generated[$key]),
-        );
     }
 
     private function shouldSkipExample(): bool

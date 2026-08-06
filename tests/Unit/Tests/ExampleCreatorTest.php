@@ -166,23 +166,6 @@ describe('makeId', function () {
 
         expect($instance->id)->not->toContain('--dataset');
     });
-
-    it('replaces path separators in nested dataset names', function () {
-        $test = Mockery::mock(Illuminate\Foundation\Testing\TestCase::class);
-        $instance = new ExampleCreator([
-            'test' => $test,
-            'testMethod' => 'test_example',
-            'dataName' => 'dataset "with" / dataset "first_mile_pending"',
-            'providedData' => [],
-            'description' => 'test',
-        ]);
-
-        $id = $instance->id;
-
-        expect($id)
-            ->not->toContain('/')
-            ->and($id)->toContain('dataset "with" ~ dataset "first_mile_pending"');
-    });
 });
 
 describe('writePath', function () {

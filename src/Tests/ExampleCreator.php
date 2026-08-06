@@ -48,11 +48,11 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public static function makeId(self $instance)
     {
-        $parts = array_map(static fn ($part) => str_replace(['\\', '/'], '~', $part), array_filter([
-            $instance->testClass,
+        $parts = array_filter([
+            str_replace('\\', '~', $instance->testClass),
             $instance->testMethod,
             $instance->dataName,
-        ]));
+        ]);
 
         return implode('--', $parts);
     }
