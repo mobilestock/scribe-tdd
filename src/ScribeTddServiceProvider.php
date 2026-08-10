@@ -8,8 +8,11 @@ use AjCastro\ScribeTdd\Writing\ScribeTddBaseGenerator;
 use AjCastro\ScribeTdd\Writing\ScribeTddOverridesGenerator;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\ParallelTesting;
 use Illuminate\Support\ServiceProvider;
+use Knuckles\Scribe\ScribeServiceProvider;
 use Knuckles\Scribe\Writing\OpenApiSpecGenerators\BaseGenerator;
 use Knuckles\Scribe\Writing\OpenApiSpecGenerators\OverridesGenerator;
 
@@ -80,6 +83,15 @@ class ScribeTddServiceProvider extends ServiceProvider
         }
 
         $this->registerMiddleware();
+        if (empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
+            return;
+        }
+
+        ParallelTesting::tearDownProcess(function () {
+            $_SERVER['SCRIBE_TESTS'] = true;
+            ScribeServiceProvider::$customTranslationLayerLoaded = false;
+            Artisan::call('scribe:generate');
+        });
     }
 
     private function registerMiddleware(): void
