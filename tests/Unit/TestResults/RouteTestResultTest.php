@@ -194,10 +194,8 @@ describe('getTestDocBlocks', function () {
 
         $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
 
-        expect($docBlocks['class']->getTagsByName('group'))
-            ->toHaveCount(1)
-            ->and($docBlocks['method']->getTagsByName('urlParam'))
-            ->toHaveCount(1);
+        expect($docBlocks['class']->getTagsByName('group'))->toHaveCount(1)
+            ->and($docBlocks['method']->getTagsByName('urlParam'))->toHaveCount(1);
     });
 
     it('returns empty docblocks for legacy manifests with an unavailable test class', function () {
@@ -209,7 +207,8 @@ describe('getTestDocBlocks', function () {
 
         $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
 
-        expect($docBlocks['class']->getTags())->toBeEmpty()->and($docBlocks['method']->getTags())->toBeEmpty();
+        expect($docBlocks['class']->getTags())->toBeEmpty()
+            ->and($docBlocks['method']->getTags())->toBeEmpty();
     });
 
     it('loads legacy method docblocks when the test class has no docblock', function () {
@@ -227,10 +226,8 @@ describe('getTestDocBlocks', function () {
 
         $docBlocks = RouteTestResult::getTestDocBlocks($route, $testResult);
 
-        expect($docBlocks['class']?->getTags() ?: [])
-            ->toBeEmpty()
-            ->and($docBlocks['method']->getTagsByName('urlParam'))
-            ->toHaveCount(1);
+        expect($docBlocks['class']?->getTags() ?: [])->toBeEmpty()
+            ->and($docBlocks['method']->getTagsByName('urlParam'))->toHaveCount(1);
     });
 });
 

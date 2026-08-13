@@ -18,9 +18,10 @@ class GetFromResponseFieldTagFromScribeTdd extends GetFromResponseFieldTag
 
         [
             'method' => $methodDocBlock,
-            'class' => $classDocBlock,
-        ] = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
-
+            'class' => $classDocBlock
+        ]
+        = RouteTestResult::getTestDocBlocks($endpointData->route, $testResult);
+    
         return $this->getFromTags($methodDocBlock->getTags(), $classDocBlock?->getTags() ?: []);
     }
 }
