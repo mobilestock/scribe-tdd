@@ -4,12 +4,17 @@ namespace AjCastro\ScribeTdd\Tests;
 
 use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
 use Exception;
-use PHPUnit\Metadata\Annotation\Parser\Registry;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Knuckles\Scribe\ScribeServiceProvider;
+use PHPUnit\Metadata\Annotation\Parser\Registry;
 use Str;
 
 trait ScribeTddSetup
 {
+    protected static bool $shutdownRegistered = false;
+
     public function setUpScribeTdd(): void
     {
         if (!config('scribe-tdd.enabled')) {
@@ -29,6 +34,20 @@ trait ScribeTddSetup
         $this->beforeApplicationDestroyed(function () {
             $this->writeExample();
         });
+
+        if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
+            register_shutdown_function(fn() => $this->triggerScribeGeneration());
+            self::$shutdownRegistered = true;
+        }
+    }
+
+    public function triggerScribeGeneration(): void
+    {
+        $this->createApplication();
+
+        $_SERVER['SCRIBE_TESTS'] = true;
+        ScribeServiceProvider::$customTranslationLayerLoaded = false;
+        Artisan::call('scribe:generate');
     }
 
     private function makeExample(): void
