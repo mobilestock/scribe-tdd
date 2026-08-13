@@ -80,7 +80,7 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public static function writeDir(Route $route)
     {
-        return storage_path('scribe-tdd/' . static::normalizeUriForInstanceKey($route));
+        return config('scribe-tdd.artifact_directory') . '/' . static::normalizeUriForInstanceKey($route);
     }
 
     public static function getInstanceForRoute($route)

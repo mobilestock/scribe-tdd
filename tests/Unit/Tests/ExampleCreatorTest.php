@@ -35,7 +35,7 @@ describe('writeDir', function () {
 
         $dir = ExampleCreator::writeDir($route);
 
-        expect($dir)->toContain('scribe-tdd/payments~process,POST');
+        expect($dir)->toBe(config('scribe-tdd.artifact_directory') . '/payments~process,POST');
     });
 });
 

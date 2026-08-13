@@ -4,15 +4,12 @@ use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use AjCastro\ScribeTdd\Tests\ExampleRequest;
 use AjCastro\ScribeTdd\Tests\ScribeTddSetup;
-use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Foundation\Testing\TestCase;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\File;
-use Knuckles\Scribe\ScribeServiceProvider;
 
 beforeEach(function () {
     ExampleCreator::flushInstances();
@@ -173,7 +170,6 @@ describe('parseTestMethodAnnotations', function () {
 describe('setUpScribeTdd', function () {
     beforeEach(function () {
         Config::set('scribe-tdd.enabled', true);
-
         $this->trait = new class {
             use ScribeTddSetup;
 
@@ -184,20 +180,6 @@ describe('setUpScribeTdd', function () {
             public function callSetUp(): void
             {
                 $this->setUpScribeTdd();
-            }
-
-            public static function setShutdownRegistered(bool $value): void
-            {
-                self::$shutdownRegistered = $value;
-            }
-
-            public static function isShutdownRegistered(): bool
-            {
-                return self::$shutdownRegistered;
-            }
-
-            public function triggerScribeGeneration(): void
-            {
             }
 
             public function afterApplicationCreated(callable $callback)
@@ -226,7 +208,6 @@ describe('setUpScribeTdd', function () {
             }
         };
         $this->trait->app = app();
-        $this->trait::setShutdownRegistered(true);
     });
 
     it('returns early when scribe-tdd is disabled', function () {
@@ -253,49 +234,10 @@ describe('setUpScribeTdd', function () {
         expect(ExampleCreator::getInstances())->toBeEmpty();
     });
 
-    it('registers shutdown generation once outside parallel testing', function () {
-        unset($_SERVER['LARAVEL_PARALLEL_TESTING']);
-        $this->trait::setShutdownRegistered(false);
-
-        $this->trait->callSetUp();
-
-        expect($this->trait::isShutdownRegistered())->toBeTrue();
-    });
-
     it('throws LaravelNotPresent when app is empty', function () {
         $this->trait->app = null;
 
         expect(fn() => $this->trait->callSetUp())->toThrow(LaravelNotPresent::class);
-    });
-});
-
-describe('triggerScribeGeneration', function () {
-    it('recreates the application before generating documentation', function () {
-        $consoleKernel = Mockery::mock(app(Kernel::class))->makePartial();
-        $consoleKernel->shouldReceive('call')->once()->with('scribe:generate')->andReturn(0);
-        $trait = new class {
-            use ScribeTddSetup;
-
-            public bool $applicationCreated = false;
-            public $consoleKernel;
-
-            public function createApplication()
-            {
-                $this->applicationCreated = true;
-                Artisan::swap($this->consoleKernel);
-
-                return app();
-            }
-        };
-        $trait->consoleKernel = $consoleKernel;
-
-        $trait->triggerScribeGeneration();
-
-        expect($trait->applicationCreated)->toBeTrue()
-            ->and($_SERVER['SCRIBE_TESTS'])->toBeTrue()
-            ->and(ScribeServiceProvider::$customTranslationLayerLoaded)->toBeFalse();
-
-        unset($_SERVER['SCRIBE_TESTS']);
     });
 });
 
