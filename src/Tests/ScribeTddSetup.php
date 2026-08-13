@@ -76,8 +76,8 @@ trait ScribeTddSetup
         $existingData = json_decode(File::get($path), true);
         $serializedData = json_decode(json_encode($data), true);
 
-        return is_array($existingData)
-            && app(ArtifactStructureComparator::class)->areCompatible($existingData, $serializedData);
+        return is_array($existingData) &&
+            app(ArtifactStructureComparator::class)->areCompatible($existingData, $serializedData);
     }
 
     private function shouldSkipExample(): bool

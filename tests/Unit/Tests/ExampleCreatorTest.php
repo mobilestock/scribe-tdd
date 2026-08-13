@@ -179,9 +179,7 @@ describe('makeId', function () {
 
         $id = $instance->id;
 
-        expect($id)
-            ->not->toContain('/')
-            ->not->toContain('\\');
+        expect($id)->not->toContain('/')->not->toContain('\\');
     })->with([
         'forward slash' => 'dataset "with" / dataset "first_mile_pending"',
         'backslash' => 'App\\Enum\\OrderItemStatus',

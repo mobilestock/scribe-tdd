@@ -48,5 +48,4 @@ class ArtifactReconciliationPlugin implements AddsOutput, HandlesArguments
     {
         return getenv('SCRIBE_TDD_COMMITTED_ARTIFACT_DIRECTORY') ?: getcwd() . '/storage/scribe-tdd';
     }
-
 }

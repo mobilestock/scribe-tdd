@@ -8,7 +8,7 @@ class ArtifactStructureComparator
     {
         return $this->structuresAreCompatible(
             $this->comparisonStructure($existing),
-            $this->comparisonStructure($generated),
+            $this->comparisonStructure($generated)
         );
     }
 
@@ -22,7 +22,7 @@ class ArtifactStructureComparator
                     'description' => $response['description'] ?? null,
                     'content' => $this->contentStructure($response['content'] ?? null),
                 ],
-                $data['responses'] ?? [],
+                $data['responses'] ?? []
             ),
         ];
     }
@@ -35,9 +35,7 @@ class ArtifactStructureComparator
 
         $decodedContent = json_decode($content, true);
 
-        return json_last_error() === JSON_ERROR_NONE
-            ? $this->valueShape($decodedContent)
-            : get_debug_type($content);
+        return json_last_error() === JSON_ERROR_NONE ? $this->valueShape($decodedContent) : get_debug_type($content);
     }
 
     private function valueShape(mixed $value): mixed
@@ -87,8 +85,8 @@ class ArtifactStructureComparator
         }
 
         if (array_is_list($existing)) {
-            return $this->listShapesAreCompatible($existing, $generated)
-                && $this->listShapesAreCompatible($generated, $existing);
+            return $this->listShapesAreCompatible($existing, $generated) &&
+                $this->listShapesAreCompatible($generated, $existing);
         }
 
         if (array_keys($existing) !== array_keys($generated)) {

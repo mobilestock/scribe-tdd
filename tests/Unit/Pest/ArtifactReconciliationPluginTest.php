@@ -17,7 +17,7 @@ afterEach(function () {
         $_SERVER['PARATEST'],
         $_ENV['PARATEST'],
         $_SERVER['SCRIBE_TDD_ARTIFACT_DIRECTORY'],
-        $_ENV['SCRIBE_TDD_ARTIFACT_DIRECTORY'],
+        $_ENV['SCRIBE_TDD_ARTIFACT_DIRECTORY']
     );
     File::deleteDirectory($this->committedDirectory);
 });
@@ -28,11 +28,16 @@ it('creates an isolated artifact directory inside the test process', function ()
     $arguments = $plugin->handleArguments(['--parallel']);
     $generatedDirectory = getenv('SCRIBE_TDD_ARTIFACT_DIRECTORY');
 
-    expect($arguments)->toBe(['--parallel'])
-        ->and($generatedDirectory)->toStartWith(sys_get_temp_dir() . '/scribe-tdd-')
-        ->and(File::isDirectory($generatedDirectory))->toBeTrue()
-        ->and($_ENV['SCRIBE_TDD_ARTIFACT_DIRECTORY'])->toBe($generatedDirectory)
-        ->and($_SERVER['SCRIBE_TDD_ARTIFACT_DIRECTORY'])->toBe($generatedDirectory);
+    expect($arguments)
+        ->toBe(['--parallel'])
+        ->and($generatedDirectory)
+        ->toStartWith(sys_get_temp_dir() . '/scribe-tdd-')
+        ->and(File::isDirectory($generatedDirectory))
+        ->toBeTrue()
+        ->and($_ENV['SCRIBE_TDD_ARTIFACT_DIRECTORY'])
+        ->toBe($generatedDirectory)
+        ->and($_SERVER['SCRIBE_TDD_ARTIFACT_DIRECTORY'])
+        ->toBe($generatedDirectory);
 
     File::deleteDirectory($generatedDirectory);
 });
@@ -46,9 +51,12 @@ it('commits generated artifacts after a successful test run', function () {
 
     $exitCode = $plugin->addOutput(0);
 
-    expect($exitCode)->toBe(0)
-        ->and(File::get($this->committedDirectory . '/route/example.json'))->toBe('{"description":"example"}')
-        ->and(File::isDirectory($generatedDirectory))->toBeFalse();
+    expect($exitCode)
+        ->toBe(0)
+        ->and(File::get($this->committedDirectory . '/route/example.json'))
+        ->toBe('{"description":"example"}')
+        ->and(File::isDirectory($generatedDirectory))
+        ->toBeFalse();
 });
 
 it('leaves committed artifacts untouched and discards generated artifacts after a failed test run', function () {
@@ -61,9 +69,12 @@ it('leaves committed artifacts untouched and discards generated artifacts after 
 
     $exitCode = $plugin->addOutput(1);
 
-    expect($exitCode)->toBe(1)
-        ->and(File::get($this->committedDirectory . '/example.json'))->toBe('{"id":1}')
-        ->and(File::isDirectory($generatedDirectory))->toBeFalse();
+    expect($exitCode)
+        ->toBe(1)
+        ->and(File::get($this->committedDirectory . '/example.json'))
+        ->toBe('{"id":1}')
+        ->and(File::isDirectory($generatedDirectory))
+        ->toBeFalse();
 });
 
 it('does not reconcile artifacts in a parallel worker', function () {
@@ -77,9 +88,12 @@ it('does not reconcile artifacts in a parallel worker', function () {
     $plugin->handleArguments([]);
     $exitCode = $plugin->addOutput(0);
 
-    expect($exitCode)->toBe(0)
-        ->and(File::exists($generatedDirectory . '/example.json'))->toBeTrue()
-        ->and(File::isDirectory($this->committedDirectory))->toBeFalse();
+    expect($exitCode)
+        ->toBe(0)
+        ->and(File::exists($generatedDirectory . '/example.json'))
+        ->toBeTrue()
+        ->and(File::isDirectory($this->committedDirectory))
+        ->toBeFalse();
 
     File::deleteDirectory($generatedDirectory);
 });

@@ -40,7 +40,11 @@ class ArtifactReconciler
             $generated = json_decode($this->files->get($generatedArtifact->getPathname()), true);
             $previous = json_decode($this->files->get($previousArtifactPath), true);
 
-            if (is_array($generated) && is_array($previous) && $this->comparator->areCompatible($previous, $generated)) {
+            if (
+                is_array($generated) &&
+                is_array($previous) &&
+                $this->comparator->areCompatible($previous, $generated)
+            ) {
                 $this->files->copy($previousArtifactPath, $generatedArtifact->getPathname());
             }
         }

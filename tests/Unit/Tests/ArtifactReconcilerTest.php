@@ -25,30 +25,42 @@ afterEach(function () {
 it('restores the previous artifact when structures are compatible', function () {
     $generatedPath = $this->generatedDirectory . '/route/example.json';
     $previousPath = $this->committedDirectory . '/route/example.json';
-    $previous = json_encode([
-        'description' => 'example',
-        'body_params' => ['id' => 1],
-        'responses' => [[
-            'status' => 200,
-            'description' => 'success',
-            'content' => '{"id":1}',
-        ]],
-    ], JSON_PRETTY_PRINT);
+    $previous = json_encode(
+        [
+            'description' => 'example',
+            'body_params' => ['id' => 1],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'description' => 'success',
+                    'content' => '{"id":1}',
+                ],
+            ],
+        ],
+        JSON_PRETTY_PRINT
+    );
     File::put($previousPath, $previous);
-    File::put($generatedPath, json_encode([
-        'description' => 'example',
-        'body_params' => ['id' => 2],
-        'responses' => [[
-            'status' => 200,
-            'description' => 'success',
-            'content' => '{"id":2}',
-        ]],
-    ]));
+    File::put(
+        $generatedPath,
+        json_encode([
+            'description' => 'example',
+            'body_params' => ['id' => 2],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'description' => 'success',
+                    'content' => '{"id":2}',
+                ],
+            ],
+        ])
+    );
 
     app(ArtifactReconciler::class)->commit($this->generatedDirectory, $this->committedDirectory);
 
-    expect(File::get($this->committedDirectory . '/route/example.json'))->toBe($previous)
-        ->and(File::get($generatedPath))->not->toBe($previous);
+    expect(File::get($this->committedDirectory . '/route/example.json'))
+        ->toBe($previous)
+        ->and(File::get($generatedPath))
+        ->not->toBe($previous);
 });
 
 it('keeps generated artifacts that are new, changed, malformed, or not JSON', function () {
@@ -90,7 +102,7 @@ it('commits an empty snapshot when no generated artifacts exist', function () {
 it('restores the committed snapshot when installing the staged snapshot fails', function () {
     File::put($this->generatedDirectory . '/route/example.json', '{"id":2}');
     File::put($this->committedDirectory . '/route/example.json', '{"id":1}');
-    $reconciler = new class(app(ArtifactStructureComparator::class)) extends ArtifactReconciler {
+    $reconciler = new class (app(ArtifactStructureComparator::class)) extends ArtifactReconciler {
         private int $moveCount = 0;
 
         protected function moveDirectory(string $from, string $to, bool $overwrite = false): void
@@ -105,7 +117,9 @@ it('restores the committed snapshot when installing the staged snapshot fails', 
         }
     };
 
-    expect(fn() => $reconciler->commit($this->generatedDirectory, $this->committedDirectory))
-        ->toThrow(RuntimeException::class, 'Unable to install staged artifacts.');
+    expect(fn() => $reconciler->commit($this->generatedDirectory, $this->committedDirectory))->toThrow(
+        RuntimeException::class,
+        'Unable to install staged artifacts.'
+    );
     expect(File::get($this->committedDirectory . '/route/example.json'))->toBe('{"id":1}');
 });

@@ -350,12 +350,14 @@ describe('hasSameStructure', function () {
             'id' => 'original-id',
             'description' => 'pest evaluable create returns 200',
             'body_params' => ['store_id' => 123],
-            'responses' => [[
-                'status' => 200,
-                'headers' => ['date' => ['Wed, 05 Aug 2026 13:04:07 GMT']],
-                'description' => '200, pest evaluable create returns 200',
-                'content' => '{"store_id":123,"active":true}',
-            ]],
+            'responses' => [
+                [
+                    'status' => 200,
+                    'headers' => ['date' => ['Wed, 05 Aug 2026 13:04:07 GMT']],
+                    'description' => '200, pest evaluable create returns 200',
+                    'content' => '{"store_id":123,"active":true}',
+                ],
+            ],
         ];
         File::put($this->path, json_encode($this->data));
     });
@@ -391,16 +393,11 @@ describe('hasSameStructure', function () {
     it('ignores values in non-string list content with the same structure', function () {
         $existingData = $this->data;
         $existingData['responses'][0]['content'] = [
-            'items' => [
-                ['id' => 1],
-                ['id' => 2],
-            ],
+            'items' => [['id' => 1], ['id' => 2]],
         ];
         File::put($this->path, json_encode($existingData));
         $newData = $existingData;
-        $newData['responses'][0]['content']['items'] = [
-            ['id' => 3],
-        ];
+        $newData['responses'][0]['content']['items'] = [['id' => 3]];
 
         $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
 

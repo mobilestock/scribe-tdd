@@ -41,18 +41,18 @@ class ExampleCreator implements Arrayable, Jsonable
         $reflection = new ReflectionClass($test);
         $this->testClassDocBlock = $reflection->getDocComment() ?: '';
         $this->testMethodDocBlock = $reflection->hasMethod($testMethod)
-            ? ($reflection->getMethod($testMethod)->getDocComment() ?: '')
+            ? ($reflection->getMethod($testMethod)->getDocComment() ?:
+            '')
             : '';
         $this->id = static::makeId($this);
     }
 
     public static function makeId(self $instance)
     {
-        $parts = array_map(static fn ($part) => str_replace(['\\', '/'], '~', $part), array_filter([
-            $instance->testClass,
-            $instance->testMethod,
-            $instance->dataName,
-        ]));
+        $parts = array_map(
+            static fn($part) => str_replace(['\\', '/'], '~', $part),
+            array_filter([$instance->testClass, $instance->testMethod, $instance->dataName])
+        );
 
         return implode('--', $parts);
     }
