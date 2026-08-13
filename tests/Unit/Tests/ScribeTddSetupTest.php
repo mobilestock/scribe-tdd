@@ -274,15 +274,14 @@ describe('writeExample', function () {
 
         $dir = ExampleCreator::writeDir($route);
         $writtenData = json_decode(File::get($instance->writePath()), true);
-        $generatedMarkerPath = $dir . '/.generated/' . basename($instance->writePath());
 
-        expect(File::files($dir))
+        expect(File::allFiles($dir))
             ->toHaveCount(1)
+            ->and(File::extension(File::allFiles($dir)[0]))
+            ->toBe('json')
             ->and($writtenData)
             ->toEqual($instance->toArray())
-            ->toHaveKeys(['url_params', 'query_params', 'body_params', 'responses'])
-            ->and(File::exists($generatedMarkerPath))
-            ->toBeTrue();
+            ->toHaveKeys(['url_params', 'query_params', 'body_params', 'responses']);
 
         $response->headers->set('Date', 'Wed, 29 Jul 2026 20:30:38 GMT');
         $response->setContent('{"ok":false}');
@@ -409,24 +408,36 @@ describe('hasSameStructure', function () {
         expect($hasSameStructure)->toBeTrue();
     });
 
-    it('ignores numeric object key and list order changes', function () {
+    it('ignores numeric value and list order changes', function () {
         $existingData = $this->data;
-        $existingData['responses'][0]['content'] = '{"customers":{"58":6},"items":[1,"value"],"price":10}';
+        $existingData['responses'][0]['content'] = '{"items":[1,"value"],"price":10}';
         File::put($this->path, json_encode($existingData));
         $newData = $existingData;
-        $newData['responses'][0]['content'] = '{"customers":{"52":7},"items":["other",2],"price":10.5}';
+        $newData['responses'][0]['content'] = '{"items":["other",2],"price":10.5}';
 
         $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
 
         expect($hasSameStructure)->toBeTrue();
     });
 
-    it('ignores nullable values in otherwise matching list items', function () {
+    it('ignores nullable value changes', function () {
         $existingData = $this->data;
-        $existingData['responses'][0]['content'] = '[{"delivery_type":"COURIER"}]';
+        $existingData['responses'][0]['content'] = '{"items":[{"delivery_type":"COURIER"}]}';
         File::put($this->path, json_encode($existingData));
         $newData = $existingData;
-        $newData['responses'][0]['content'] = '[{"delivery_type":"COURIER"},{"delivery_type":null}]';
+        $newData['responses'][0]['content'] = '{"items":[{"delivery_type":null},{"delivery_type":"WAREHOUSE"}]}';
+
+        $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
+
+        expect($hasSameStructure)->toBeTrue();
+    });
+
+    it('ignores numeric object key changes', function () {
+        $existingData = $this->data;
+        $existingData['responses'][0]['content'] = '{"customers":{"53":6}}';
+        File::put($this->path, json_encode($existingData));
+        $newData = $existingData;
+        $newData['responses'][0]['content'] = '{"customers":{"26":42}}';
 
         $hasSameStructure = $this->trait->callHasSameStructure($this->path, $newData);
 

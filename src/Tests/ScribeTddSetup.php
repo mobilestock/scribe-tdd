@@ -54,9 +54,6 @@ trait ScribeTddSetup
 
                 foreach ($instance->getWritables() as $filename => $writeData) {
                     $writePath = $writeDir . '/' . $filename;
-                    $generatedMarkerDirectory = $writeDir . '/.generated';
-                    File::makeDirectory($generatedMarkerDirectory, 0755, true, true);
-                    File::put($generatedMarkerDirectory . '/' . $filename, '');
 
                     if ($this->hasSameStructure($writePath, $writeData)) {
                         continue;
@@ -80,7 +77,7 @@ trait ScribeTddSetup
         $serializedData = json_decode(json_encode($data), true);
 
         return is_array($existingData)
-            && $this->structuresMatch(
+            && $this->structuresAreCompatible(
                 $this->comparisonStructure($existingData),
                 $this->comparisonStructure($serializedData),
             );
@@ -137,17 +134,16 @@ trait ScribeTddSetup
             return array_values($itemShapes);
         }
 
-        $keys = array_keys($value);
-        $hasOnlyNumericKeys = count(array_filter($keys, fn($key) => is_int($key))) === count($keys);
+        $shape = [];
 
-        if ($hasOnlyNumericKeys) {
-            return $this->valueShape(array_values($value));
+        foreach ($value as $key => $item) {
+            $shape[is_int($key) ? 'number' : $key] = $this->valueShape($item);
         }
 
-        return array_map(fn($item) => $this->valueShape($item), $value);
+        return $shape;
     }
 
-    private function structuresMatch(mixed $existing, mixed $generated): bool
+    private function structuresAreCompatible(mixed $existing, mixed $generated): bool
     {
         if ($existing === 'null' || $generated === 'null') {
             return true;
@@ -162,24 +158,34 @@ trait ScribeTddSetup
         }
 
         if (array_is_list($existing)) {
-            return collect($existing)->every(
-                fn($shape) => collect($generated)->contains(
-                    fn($generatedShape) => $this->structuresMatch($shape, $generatedShape),
-                ),
-            ) && collect($generated)->every(
-                fn($shape) => collect($existing)->contains(
-                    fn($existingShape) => $this->structuresMatch($existingShape, $shape),
-                ),
-            );
+            return $this->listShapesAreCompatible($existing, $generated)
+                && $this->listShapesAreCompatible($generated, $existing);
         }
 
         if (array_keys($existing) !== array_keys($generated)) {
             return false;
         }
 
-        return collect($existing)->every(
-            fn($shape, $key) => $this->structuresMatch($shape, $generated[$key]),
-        );
+        foreach ($existing as $key => $value) {
+            if (!$this->structuresAreCompatible($value, $generated[$key])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private function listShapesAreCompatible(array $shapes, array $candidates): bool
+    {
+        foreach ($shapes as $shape) {
+            if (!collect($candidates)->contains(
+                fn($candidate) => $this->structuresAreCompatible($shape, $candidate),
+            )) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private function shouldSkipExample(): bool
