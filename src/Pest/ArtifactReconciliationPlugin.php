@@ -6,10 +6,24 @@ use AjCastro\ScribeTdd\Tests\ArtifactReconciler;
 use AjCastro\ScribeTdd\Tests\ArtifactStructureComparator;
 use Pest\Contracts\Plugins\AddsOutput;
 use Pest\Contracts\Plugins\HandlesArguments;
+use Pest\Contracts\Plugins\HandlesOriginalArguments;
 use Pest\Plugins\Parallel;
 
-class ArtifactReconciliationPlugin implements AddsOutput, HandlesArguments
+class ArtifactReconciliationPlugin implements AddsOutput, HandlesArguments, HandlesOriginalArguments
 {
+    private bool $partialRun = false;
+
+    public function handleOriginalArguments(array $arguments): void
+    {
+        $this->partialRun = array_any(
+            array_slice($arguments, 1),
+            fn(string $argument) => str_starts_with($argument, '--filter') ||
+                is_file($argument) ||
+                is_dir($argument) ||
+                str_ends_with($argument, '.php')
+        );
+    }
+
     public function handleArguments(array $arguments): array
     {
         if (!Parallel::isWorker()) {
@@ -30,7 +44,7 @@ class ArtifactReconciliationPlugin implements AddsOutput, HandlesArguments
             $reconciler = new ArtifactReconciler(new ArtifactStructureComparator());
 
             if ($exitCode === 0) {
-                $reconciler->commit($this->generatedDirectory(), $this->committedDirectory());
+                $reconciler->commit($this->generatedDirectory(), $this->committedDirectory(), $this->partialRun);
             }
 
             $reconciler->discard($this->generatedDirectory());

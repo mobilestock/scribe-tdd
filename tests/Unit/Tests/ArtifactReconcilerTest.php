@@ -90,6 +90,18 @@ it('keeps generated artifacts that are new, changed, malformed, or not JSON', fu
     }
 });
 
+it('merges generated artifacts into the committed snapshot when existing artifacts must be preserved', function () {
+    File::put($this->generatedDirectory . '/route/selected.json', '{"description":"generated"}');
+    File::put($this->committedDirectory . '/route/unrelated.json', '{"description":"unrelated"}');
+
+    app(ArtifactReconciler::class)->commit($this->generatedDirectory, $this->committedDirectory, true);
+
+    expect(File::get($this->committedDirectory . '/route/selected.json'))
+        ->toBe('{"description":"generated"}')
+        ->and(File::get($this->committedDirectory . '/route/unrelated.json'))
+        ->toBe('{"description":"unrelated"}');
+});
+
 it('commits an empty snapshot when no generated artifacts exist', function () {
     File::deleteDirectory($this->generatedDirectory);
     File::put($this->committedDirectory . '/route/example.json', '{}');

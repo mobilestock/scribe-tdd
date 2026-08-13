@@ -13,13 +13,20 @@ class ArtifactReconciler
         $this->files = new Filesystem();
     }
 
-    public function commit(string $generatedArtifactDirectory, string $committedArtifactDirectory): void
-    {
+    public function commit(
+        string $generatedArtifactDirectory,
+        string $committedArtifactDirectory,
+        bool $preserveExistingArtifacts = false
+    ): void {
         $stagingDirectory = $committedArtifactDirectory . '.staging';
         $previousDirectory = $committedArtifactDirectory . '.previous';
         $this->files->deleteDirectory($stagingDirectory);
         $this->files->deleteDirectory($previousDirectory);
         $this->files->makeDirectory($stagingDirectory, 0755, true);
+
+        if ($preserveExistingArtifacts && $this->files->isDirectory($committedArtifactDirectory)) {
+            $this->files->copyDirectory($committedArtifactDirectory, $stagingDirectory);
+        }
 
         if ($this->files->isDirectory($generatedArtifactDirectory)) {
             $this->files->copyDirectory($generatedArtifactDirectory, $stagingDirectory);
