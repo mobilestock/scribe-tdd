@@ -16,6 +16,9 @@ class ArtifactStructureComparator
     {
         return [
             'description' => $data['description'] ?? null,
+            'url_params' => $this->parameterStructure($data['url_params'] ?? []),
+            'query_params' => $this->parameterStructure($data['query_params'] ?? []),
+            'body_params' => $this->parameterStructure($data['body_params'] ?? []),
             'responses' => array_map(
                 fn(array $response) => [
                     'status' => $response['status'] ?? null,
@@ -25,6 +28,19 @@ class ArtifactStructureComparator
                 $data['responses'] ?? []
             ),
         ];
+    }
+
+    private function parameterStructure(array $parameters): array
+    {
+        return array_map(function (mixed $parameter): mixed {
+            if (is_array($parameter) && array_key_exists('example', $parameter)) {
+                $parameter['example'] = $this->valueShape($parameter['example']);
+
+                return $parameter;
+            }
+
+            return $this->valueShape($parameter);
+        }, $parameters);
     }
 
     private function contentStructure(mixed $content): mixed

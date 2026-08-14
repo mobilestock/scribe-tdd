@@ -63,6 +63,31 @@ it('restores the previous artifact when structures are compatible', function () 
         ->not->toBe($previous);
 });
 
+it('commits the generated artifact when a request parameter type changes', function () {
+    $generatedPath = $this->generatedDirectory . '/route/example.json';
+    $previousPath = $this->committedDirectory . '/route/example.json';
+    $previous = [
+        'description' => 'example',
+        'body_params' => [
+            'id' => ['type' => 'integer', 'description' => '', 'example' => 1],
+        ],
+        'responses' => [],
+    ];
+    $generated = [
+        'description' => 'example',
+        'body_params' => [
+            'id' => ['type' => 'string', 'description' => '', 'example' => '1'],
+        ],
+        'responses' => [],
+    ];
+    File::put($previousPath, json_encode($previous));
+    File::put($generatedPath, json_encode($generated));
+
+    app(ArtifactReconciler::class)->commit($this->generatedDirectory, $this->committedDirectory);
+
+    expect(json_decode(File::get($this->committedDirectory . '/route/example.json'), true))->toBe($generated);
+});
+
 it('keeps generated artifacts that are new, changed, malformed, or not JSON', function () {
     $artifacts = [
         'new.json' => '{"description":"new"}',

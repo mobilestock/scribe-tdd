@@ -366,10 +366,9 @@ describe('hasSameStructure', function () {
         File::delete($this->path);
     });
 
-    it('ignores changes outside status, description, and content structure', function () {
+    it('ignores artifact metadata and response value changes', function () {
         $newData = $this->data;
         $newData['id'] = 'new-id';
-        $newData['body_params'] = ['different_parameter' => 'value'];
         $newData['responses'][0]['headers']['date'] = ['Thu, 06 Aug 2026 13:04:07 GMT'];
         $newData['responses'][0]['content'] = '{"store_id":456,"active":false}';
 
