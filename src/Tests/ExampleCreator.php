@@ -41,18 +41,18 @@ class ExampleCreator implements Arrayable, Jsonable
         $reflection = new ReflectionClass($test);
         $this->testClassDocBlock = $reflection->getDocComment() ?: '';
         $this->testMethodDocBlock = $reflection->hasMethod($testMethod)
-            ? ($reflection->getMethod($testMethod)->getDocComment() ?:
-            '')
+            ? ($reflection->getMethod($testMethod)->getDocComment() ?: '')
             : '';
         $this->id = static::makeId($this);
     }
 
     public static function makeId(self $instance)
     {
-        $parts = array_map(
-            static fn($part) => str_replace(['\\', '/'], '~', $part),
-            array_filter([$instance->testClass, $instance->testMethod, $instance->dataName])
-        );
+        $parts = array_filter([
+            str_replace('\\', '~', $instance->testClass),
+            $instance->testMethod,
+            $instance->dataName,
+        ]);
 
         return implode('--', $parts);
     }
@@ -80,7 +80,7 @@ class ExampleCreator implements Arrayable, Jsonable
 
     public static function writeDir(Route $route)
     {
-        return config('scribe-tdd.artifact_directory') . '/' . static::normalizeUriForInstanceKey($route);
+        return storage_path('scribe-tdd/' . static::normalizeUriForInstanceKey($route));
     }
 
     public static function getInstanceForRoute($route)

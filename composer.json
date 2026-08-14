@@ -28,11 +28,6 @@
     }
   },
   "extra": {
-    "pest": {
-      "plugins": [
-        "AjCastro\\ScribeTdd\\Pest\\ArtifactReconciliationPlugin"
-      ]
-    },
     "laravel": {
       "providers": [
         "AjCastro\\ScribeTdd\\ScribeTddServiceProvider"

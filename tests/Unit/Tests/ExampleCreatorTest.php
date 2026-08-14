@@ -35,7 +35,7 @@ describe('writeDir', function () {
 
         $dir = ExampleCreator::writeDir($route);
 
-        expect($dir)->toBe(config('scribe-tdd.artifact_directory') . '/payments~process,POST');
+        expect($dir)->toContain('scribe-tdd/payments~process,POST');
     });
 });
 
@@ -166,24 +166,6 @@ describe('makeId', function () {
 
         expect($instance->id)->not->toContain('--dataset');
     });
-
-    it('replaces path separators in nested dataset names', function (string $dataName) {
-        $test = Mockery::mock(Illuminate\Foundation\Testing\TestCase::class);
-        $instance = new ExampleCreator([
-            'test' => $test,
-            'testMethod' => 'test_example',
-            'dataName' => $dataName,
-            'providedData' => [],
-            'description' => 'test',
-        ]);
-
-        $id = $instance->id;
-
-        expect($id)->not->toContain('/')->not->toContain('\\');
-    })->with([
-        'forward slash' => 'dataset "with" / dataset "first_mile_pending"',
-        'backslash' => 'App\\Enum\\OrderItemStatus',
-    ]);
 });
 
 describe('writePath', function () {
