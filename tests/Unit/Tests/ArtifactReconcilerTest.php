@@ -88,6 +88,60 @@ it('commits the generated artifact when a request parameter type changes', funct
     expect(json_decode(File::get($this->committedDirectory . '/route/example.json'), true))->toBe($generated);
 });
 
+it('commits concrete response structure generated after a previous null', function () {
+    $generatedPath = $this->generatedDirectory . '/route/example.json';
+    $previousPath = $this->committedDirectory . '/route/example.json';
+    $previous = [
+        'description' => 'example',
+        'responses' => [['status' => 200, 'description' => 'success', 'content' => '{"profile":null}']],
+    ];
+    $generated = [
+        'description' => 'example',
+        'responses' => [['status' => 200, 'description' => 'success', 'content' => '{"profile":{"id":1}}']],
+    ];
+    File::put($previousPath, json_encode($previous));
+    File::put($generatedPath, json_encode($generated));
+
+    app(ArtifactReconciler::class)->commit($this->generatedDirectory, $this->committedDirectory);
+
+    expect(json_decode(File::get($this->committedDirectory . '/route/example.json'), true))->toBe($generated);
+});
+
+it('commits an enum array generated after an ordinary string array', function () {
+    $generatedPath = $this->generatedDirectory . '/route/example.json';
+    $previousPath = $this->committedDirectory . '/route/example.json';
+    $previous = [
+        'description' => 'example',
+        'responses' => [
+            [
+                'status' => 200,
+                'description' => 'success',
+                'content' => '{"methods":["legacy","manual"]}',
+            ],
+        ],
+    ];
+    $generated = [
+        'description' => 'example',
+        'responses' => [
+            [
+                'status' => 200,
+                'description' => 'success',
+                'content' => '{"methods":["EMAIL","PHONE_NUMBER"]}',
+                'content_enum_paths' => [
+                    ['path' => ['methods', 0], 'class' => 'App\\Enum\\LoginMethod'],
+                    ['path' => ['methods', 1], 'class' => 'App\\Enum\\LoginMethod'],
+                ],
+            ],
+        ],
+    ];
+    File::put($previousPath, json_encode($previous));
+    File::put($generatedPath, json_encode($generated));
+
+    app(ArtifactReconciler::class)->commit($this->generatedDirectory, $this->committedDirectory);
+
+    expect(json_decode(File::get($this->committedDirectory . '/route/example.json'), true))->toBe($generated);
+});
+
 it('keeps generated artifacts that are new, changed, malformed, or not JSON', function () {
     $artifacts = [
         'new.json' => '{"description":"new"}',

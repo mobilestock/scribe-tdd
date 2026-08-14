@@ -59,6 +59,26 @@ it('commits generated artifacts after a successful test run', function () {
         ->toBeFalse();
 });
 
+it('replaces the committed snapshot when running the complete tests directory', function () {
+    $plugin = new ArtifactReconciliationPlugin();
+    $plugin->handleOriginalArguments(['vendor/bin/pest', 'tests', '--coverage']);
+    $plugin->handleArguments([]);
+    $generatedDirectory = getenv('SCRIBE_TDD_ARTIFACT_DIRECTORY');
+    File::makeDirectory($generatedDirectory . '/route', 0755, true);
+    File::makeDirectory($this->committedDirectory . '/route', 0755, true);
+    File::put($generatedDirectory . '/route/current.json', '{"description":"current"}');
+    File::put($this->committedDirectory . '/route/stale.json', '{"description":"stale"}');
+
+    $exitCode = $plugin->addOutput(0);
+
+    expect($exitCode)
+        ->toBe(0)
+        ->and(File::get($this->committedDirectory . '/route/current.json'))
+        ->toBe('{"description":"current"}')
+        ->and(File::exists($this->committedDirectory . '/route/stale.json'))
+        ->toBeFalse();
+});
+
 it('preserves unrelated committed artifacts after a successful filtered test run', function () {
     $plugin = new ArtifactReconciliationPlugin();
     $plugin->handleOriginalArguments(['vendor/bin/pest', '--filter=selected test']);
@@ -80,9 +100,9 @@ it('preserves unrelated committed artifacts after a successful filtered test run
         ->toBe('{"description":"unrelated"}');
 });
 
-it('preserves unrelated committed artifacts after running a test file', function () {
+it('preserves unrelated committed artifacts after running a selected test path', function (string $testPath) {
     $plugin = new ArtifactReconciliationPlugin();
-    $plugin->handleOriginalArguments(['vendor/bin/pest', 'tests/Feature/SelectedTest.php']);
+    $plugin->handleOriginalArguments(['vendor/bin/pest', $testPath]);
     $plugin->handleArguments([]);
     $generatedDirectory = getenv('SCRIBE_TDD_ARTIFACT_DIRECTORY');
     File::makeDirectory($generatedDirectory . '/route', 0755, true);
@@ -98,7 +118,10 @@ it('preserves unrelated committed artifacts after running a test file', function
         ->toBe('{"description":"generated"}')
         ->and(File::get($this->committedDirectory . '/route/unrelated.json'))
         ->toBe('{"description":"unrelated"}');
-});
+})->with([
+    'test file' => 'tests/Feature/SelectedTest.php',
+    'nested test directory' => 'tests/Unit',
+]);
 
 it('leaves committed artifacts untouched and discards generated artifacts after a failed test run', function () {
     $plugin = new ArtifactReconciliationPlugin();

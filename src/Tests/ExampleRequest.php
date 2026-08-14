@@ -6,6 +6,7 @@ use AjCastro\ScribeTdd\Tests\ParamParsers\BodyParamParser;
 use AjCastro\ScribeTdd\Tests\ParamParsers\QueryParamParser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use UnitEnum;
 
 class ExampleRequest
 {
@@ -13,7 +14,6 @@ class ExampleRequest
     public $request;
     public $response;
     private $exampleCreator;
-
 
     public function __construct(Request $request, $response, ExampleCreator $exampleCreator)
     {
@@ -25,25 +25,28 @@ class ExampleRequest
 
     public function getUrlParams()
     {
-        return collect($this->request->route()->parameters())->map(function ($value, $key) {
-            $value = is_object($value) && method_exists($value, 'getKey') ? $value->getKey() : $value;
-            return [
-                'type' => gettype($value),
-                'description' => '',
-                'example' => $value,
-                'required' => $this->isUrlParamRequired($key),
-            ];
-        })->all();
+        return collect($this->request->route()->parameters())
+            ->map(function ($value, $key) {
+                $value = is_object($value) && method_exists($value, 'getKey') ? $value->getKey() : $value;
+                return [
+                    'type' => gettype($value),
+                    'description' => '',
+                    'example' => $value,
+                    'required' => $this->isUrlParamRequired($key),
+                ];
+            })
+            ->all();
     }
 
     private function isUrlParamRequired($key)
     {
-        return Str::contains($this->request->route()->uri, '{'.$key.'}');
+        return Str::contains($this->request->route()->uri, '{' . $key . '}');
     }
 
     public function getQueryParams()
     {
-        return collect()->wrap($this->request->query->all())
+        return collect()
+            ->wrap($this->request->query->all())
             ->map([QueryParamParser::class, 'parse'])
             ->filter() // currently removing null values, for example, nested objects is not yet supported that's why it returns null
             ->all();
@@ -56,11 +59,40 @@ class ExampleRequest
 
     public function getResponse()
     {
-        return [
-            'status' => $statusCode = $this->response->getStatusCode(),
+        $response = [
+            'status' => ($statusCode = $this->response->getStatusCode()),
             'headers' => $this->response->headers->all(),
-            'description' => $statusCode.', '.$this->exampleCreator->description,
+            'description' => $statusCode . ', ' . $this->exampleCreator->description,
             'content' => (string) $this->response->getContent(),
         ];
+
+        if (method_exists($this->response, 'getOriginalContent')) {
+            $enumPaths = $this->enumPaths($this->response->getOriginalContent());
+
+            if ($enumPaths !== []) {
+                $response['content_enum_paths'] = $enumPaths;
+            }
+        }
+
+        return $response;
+    }
+
+    private function enumPaths(mixed $value, array $path = []): array
+    {
+        if ($value instanceof UnitEnum) {
+            return [['path' => $path, 'class' => $value::class]];
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $enumPaths = [];
+
+        foreach ($value as $key => $item) {
+            array_push($enumPaths, ...$this->enumPaths($item, [...$path, $key]));
+        }
+
+        return $enumPaths;
     }
 }

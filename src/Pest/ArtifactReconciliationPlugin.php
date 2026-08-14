@@ -17,11 +17,24 @@ class ArtifactReconciliationPlugin implements AddsOutput, HandlesArguments, Hand
     {
         $this->partialRun = array_any(
             array_slice($arguments, 1),
-            fn(string $argument) => str_starts_with($argument, '--filter') ||
-                is_file($argument) ||
-                is_dir($argument) ||
-                str_ends_with($argument, '.php')
+            fn(string $argument) => $this->isPartialRunArgument($argument)
         );
+    }
+
+    private function isPartialRunArgument(string $argument): bool
+    {
+        if (str_starts_with($argument, '--filter')) {
+            return true;
+        }
+
+        $path = realpath($argument);
+        $completeTestDirectory = realpath(getcwd() . '/tests');
+
+        if ($path !== false && $path === $completeTestDirectory) {
+            return false;
+        }
+
+        return is_file($argument) || is_dir($argument) || str_ends_with($argument, '.php');
     }
 
     public function handleArguments(array $arguments): array

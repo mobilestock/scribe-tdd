@@ -24,6 +24,7 @@ class ArtifactStructureComparator
                     'status' => $response['status'] ?? null,
                     'description' => $response['description'] ?? null,
                     'content' => $this->contentStructure($response['content'] ?? null),
+                    'content_enum_paths' => $response['content_enum_paths'] ?? [],
                 ],
                 $data['responses'] ?? []
             ),
@@ -88,8 +89,12 @@ class ArtifactStructureComparator
 
     private function structuresAreCompatible(mixed $existing, mixed $generated): bool
     {
-        if ($existing === 'null' || $generated === 'null') {
+        if ($generated === 'null') {
             return true;
+        }
+
+        if ($existing === 'null') {
+            return false;
         }
 
         if (!is_array($existing) || !is_array($generated)) {
@@ -102,7 +107,7 @@ class ArtifactStructureComparator
 
         if (array_is_list($existing)) {
             return $this->listShapesAreCompatible($existing, $generated) &&
-                $this->listShapesAreCompatible($generated, $existing);
+                $this->listShapesAreCompatible($generated, $existing, true);
         }
 
         if (array_keys($existing) !== array_keys($generated)) {
@@ -118,11 +123,15 @@ class ArtifactStructureComparator
         return true;
     }
 
-    private function listShapesAreCompatible(array $shapes, array $candidates): bool
+    private function listShapesAreCompatible(array $shapes, array $candidates, bool $reverse = false): bool
     {
         foreach ($shapes as $shape) {
             foreach ($candidates as $candidate) {
-                if ($this->structuresAreCompatible($shape, $candidate)) {
+                $compatible = $reverse
+                    ? $this->structuresAreCompatible($candidate, $shape)
+                    : $this->structuresAreCompatible($shape, $candidate);
+
+                if ($compatible) {
                     continue 2;
                 }
             }
