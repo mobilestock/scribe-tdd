@@ -3,9 +3,16 @@
 use AjCastro\ScribeTdd\Tests\ExampleCreator;
 use AjCastro\ScribeTdd\Tests\ExampleRequest;
 use Illuminate\Foundation\Testing\TestCase;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Route;
+
+enum ExampleRequestStatus: string
+{
+    case ACTIVE = 'active';
+    case INACTIVE = 'inactive';
+}
 
 beforeEach(function () {
     ExampleCreator::flushInstances();
@@ -128,6 +135,24 @@ it('captures response with status, headers, content and description', function (
     expect($resp['content'])->toBe('{"id":1}');
     expect($resp['description'])->toContain('201');
     expect($resp['description'])->toContain('test description');
+});
+
+it('captures enum origins from JSON response content', function () {
+    $route = new Route(['GET'], 'items', fn() => null);
+    $route->bind(Request::create('/items'));
+    $request = Request::create('/items');
+    $request->setRouteResolver(fn() => $route);
+    $response = new JsonResponse([
+        'statuses' => [ExampleRequestStatus::ACTIVE, ExampleRequestStatus::INACTIVE],
+        'plain' => ['active', 'inactive'],
+    ]);
+
+    $capturedResponse = (new ExampleRequest($request, $response, makeExampleCreatorForRequest()))->getResponse();
+
+    expect($capturedResponse['content_enum_paths'])->toBe([
+        ['path' => ['statuses', 0], 'class' => ExampleRequestStatus::class],
+        ['path' => ['statuses', 1], 'class' => ExampleRequestStatus::class],
+    ]);
 });
 
 it('converts eloquent model url param to its key', function () {
