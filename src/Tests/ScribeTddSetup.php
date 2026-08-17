@@ -5,16 +5,11 @@ namespace AjCastro\ScribeTdd\Tests;
 use AjCastro\ScribeTdd\Exceptions\LaravelNotPresent;
 use Exception;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\App;
 use PHPUnit\Metadata\Annotation\Parser\Registry;
-use Illuminate\Support\Facades\Artisan;
-use Knuckles\Scribe\ScribeServiceProvider;
 use Str;
 
 trait ScribeTddSetup
 {
-    protected static $shutdownRegistered = false;
-
     public function setUpScribeTdd(): void
     {
         if (!config('scribe-tdd.enabled')) {
@@ -34,20 +29,6 @@ trait ScribeTddSetup
         $this->beforeApplicationDestroyed(function () {
             $this->writeExample();
         });
-
-        if (App::environment('testing') && !self::$shutdownRegistered && empty($_SERVER['LARAVEL_PARALLEL_TESTING'])) {
-            register_shutdown_function(fn() => $this->triggerScribeGeneration());
-            self::$shutdownRegistered = true;
-        }
-    }
-
-    public function triggerScribeGeneration(): void
-    {
-        $this->createApplication();
-
-        $_SERVER['SCRIBE_TESTS'] = true;
-        ScribeServiceProvider::$customTranslationLayerLoaded = false;
-        Artisan::call('scribe:generate');
     }
 
     private function makeExample(): void
@@ -95,55 +76,8 @@ trait ScribeTddSetup
         $existingData = json_decode(File::get($path), true);
         $serializedData = json_decode(json_encode($data), true);
 
-        return is_array($existingData)
-            && $this->structureOf($existingData) === $this->structureOf($serializedData);
-    }
-
-    private function structureOf(mixed $value, ?string $key = null): mixed
-    {
-        if (in_array($key, ['example', 'provided_data'], true)) {
-            return $this->valueShape($value);
-        }
-
-        if ($key === 'headers' && is_array($value)) {
-            return array_map(fn($header) => $this->valueShape($header), $value);
-        }
-
-        if ($key === 'content' && is_string($value)) {
-            $decoded = json_decode($value, true);
-
-            return json_last_error() === JSON_ERROR_NONE
-                ? $this->valueShape($decoded)
-                : get_debug_type($value);
-        }
-
-        if (!is_array($value)) {
-            return $value;
-        }
-
-        $structure = [];
-
-        foreach ($value as $itemKey => $item) {
-            $structure[$itemKey] = $this->structureOf($item, (string) $itemKey);
-        }
-
-        return $structure;
-    }
-
-    private function valueShape(mixed $value): mixed
-    {
-        if (!is_array($value)) {
-            return get_debug_type($value);
-        }
-
-        if (array_is_list($value)) {
-            return array_values(array_unique(array_map(
-                fn($item) => json_encode($this->valueShape($item)),
-                $value,
-            )));
-        }
-
-        return array_map(fn($item) => $this->valueShape($item), $value);
+        return is_array($existingData) &&
+            app(ArtifactStructureComparator::class)->areCompatible($existingData, $serializedData);
     }
 
     private function shouldSkipExample(): bool
